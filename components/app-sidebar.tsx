@@ -1,10 +1,10 @@
 "use client"
 
 import type * as React from "react"
-import { useEffect, useState } from "react"
 import { useRouter, usePathname } from "next/navigation"
 import { Home, Users, Target, FileText, BarChart3, Settings, LogOut, ChevronUp, Moon, Sun, Monitor } from "lucide-react"
 import { useTheme } from "next-themes"
+import { useAuth } from "@/hooks/use-auth"
 
 import {
   Sidebar,
@@ -22,12 +22,7 @@ import {
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 
-interface User {
-  id: number
-  email: string
-  role: string
-  name: string
-}
+import type { User } from "@/lib/api"
 
 const data = {
   navMain: [
@@ -66,31 +61,26 @@ const data = {
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const [user, setUser] = useState<User | null>(null)
+  const { user, logout } = useAuth()
   const router = useRouter()
   const pathname = usePathname()
   const { theme, setTheme } = useTheme()
 
-  useEffect(() => {
-    const currentUser = localStorage.getItem("currentUser")
-    if (currentUser) {
-      setUser(JSON.parse(currentUser))
-    }
-  }, [])
-
   const handleLogout = () => {
-    localStorage.removeItem("currentUser")
-    router.push("/")
+    logout(undefined, {
+      onSuccess: () => router.push("/")
+    })
   }
 
   if (!user) {
     return null
   }
-
-  const canManageTeam = user.role === "Admin"
-  const canCreateGoals = user.role === "CEO" || user.role === "Admin"
-  const canViewTasks = user.role === "Team Member" || user.role === "Team Leader"
-  const canViewProgress = user.role === "Admin" || user.role === "CEO" || user.role === "Team Leader"
+    
+  const userRole = user.roles[0].name
+  const canManageTeam = userRole === "Admin"
+  const canCreateGoals = userRole === "CEO" || userRole === "Admin"
+  const canViewTasks = userRole === "Team Member" || userRole === "Team Leader"
+  const canViewProgress = userRole === "Admin" || userRole === "CEO" || userRole === "Team Leader"
 
   const filteredNavMain = data.navMain.filter((item) => {
     if (item.url === "/team") return canManageTeam
@@ -149,15 +139,15 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 >
                   <Avatar className="h-8 w-8 rounded-lg">
                     <AvatarFallback className="rounded-lg">
-                      {user.name
+                      {user.first_name
                         .split(" ")
                         .map((n) => n[0])
                         .join("")}
                     </AvatarFallback>
                   </Avatar>
                   <div className="grid flex-1 text-left text-sm leading-tight">
-                    <span className="truncate font-semibold">{user.name}</span>
-                    <span className="truncate text-xs">{user.role}</span>
+                    <span className="truncate font-semibold">{`${user.first_name} ${user.last_name}`}</span>
+                    <span className="truncate text-xs">{userRole}</span>
                   </div>
                   <ChevronUp className="ml-auto size-4" />
                 </SidebarMenuButton>

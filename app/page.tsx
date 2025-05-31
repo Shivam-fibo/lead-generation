@@ -4,43 +4,28 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import LoginForm from "@/components/login-form"
 import { LoadingScreen } from "@/components/loading-screen"
+import { useAuthStore } from "@/stores/auth-store"
 
 export default function HomePage() {
-  const [user, setUser] = useState(null)
+  const { user, isAuthenticated } = useAuthStore()
   const [isLoading, setIsLoading] = useState(true)
   const router = useRouter()
 
   useEffect(() => {
-    // Simple check for current user without complex hooks
-    const checkUser = () => {
-      try {
-        const currentUser = localStorage.getItem("currentUser")
-        if (currentUser) {
-          const userData = JSON.parse(currentUser)
-          setUser(userData)
-          router.push("/dashboard")
-        } else {
-          setUser(null)
-        }
-      } catch (error) {
-        console.error("Error checking user:", error)
-        setUser(null)
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
+    if (user && isAuthenticated) {
+      router.push("/dashboard")
+    } 
     // Small delay to ensure DOM is ready
-    const timer = setTimeout(checkUser, 100)
+    const timer = setTimeout(() => setIsLoading(false), 100)
     return () => clearTimeout(timer)
-  }, [router])
+  }, [router, user, isAuthenticated])
 
   if (isLoading) {
     return <LoadingScreen />
   }
 
   if (user) {
-    return null // Will redirect to dashboard
+    return null 
   }
 
   return (

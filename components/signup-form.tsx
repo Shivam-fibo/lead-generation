@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { useAuth } from "@/hooks/use-auth"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -15,77 +16,56 @@ const departments = ["Executive", "Administration", "Engineering", "Design", "Ma
 const roles = ["CEO", "Admin", "Team Leader", "Team Member"]
 
 export default function SignUpForm() {
+  const { register, registerError, isLoading } = useAuth()
   const [formData, setFormData] = useState({
-    name: "",
+    first_name: "",
+    last_name: "",
     email: "",
+    username: "",
+    number: "",
     password: "",
     confirmPassword: "",
-    role: "",
     department: "",
+    role: "Team Member",
   })
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [error, setError] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault()
-    setIsLoading(true)
     setError("")
 
     // Validation
     if (formData.password !== formData.confirmPassword) {
       setError("Passwords do not match")
-      setIsLoading(false)
       return
     }
 
     if (formData.password.length < 6) {
       setError("Password must be at least 6 characters long")
-      setIsLoading(false)
       return
     }
 
-    if (!formData.name || !formData.email || !formData.role || !formData.department) {
+    if (!formData.first_name || !formData.last_name || !formData.email || !formData.username || !formData.department) {
       setError("Please fill in all required fields")
-      setIsLoading(false)
       return
     }
 
-    // Simulate API call delay
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-
-    // Check if user already exists
-    const existingUsers = JSON.parse(localStorage.getItem("registeredUsers") || "[]")
-    const userExists = existingUsers.find((user: any) => user.email === formData.email)
-
-    if (userExists) {
-      setError("An account with this email already exists")
-      setIsLoading(false)
-      return
-    }
-
-    // Create new user
-    const newUser = {
-      id: Date.now(),
-      name: formData.name,
+    // Registration
+    register({
+      first_name: formData.first_name,
+      last_name: formData.last_name,
       email: formData.email,
+      username: formData.username,
+      number: formData.number,
       password: formData.password,
-      role: formData.role,
-      department: formData.department,
-    }
-
-    // Save to localStorage
-    const updatedUsers = [...existingUsers, newUser]
-    localStorage.setItem("registeredUsers", JSON.stringify(updatedUsers))
-
-    // Auto-login the new user
-    localStorage.setItem("currentUser", JSON.stringify(newUser))
-
-    // Redirect to dashboard
-    router.push("/dashboard")
-    setIsLoading(false)
+      roles: [{ name: formData.role, _id: formData.role.toLowerCase().replace(/\s+/g, "-") }]
+    }, {
+      onSuccess: () => router.push("/dashboard"),
+      onError: () => setError(registerError || "Registration failed")
+    })
   }
 
   const handleInputChange = (field: string, value: string) => {
@@ -106,16 +86,29 @@ export default function SignUpForm() {
       </div>
       <div className="grid gap-4">
         <form onSubmit={handleSignUp} className="grid gap-4">
-          <div className="grid gap-2">
-            <Label htmlFor="name">Full Name</Label>
-            <Input
-              id="name"
-              type="text"
-              placeholder="John Doe"
-              value={formData.name}
-              onChange={(e) => handleInputChange("name", e.target.value)}
-              required
-            />
+          <div className="grid grid-cols-2 gap-4">
+            <div className="grid gap-2">
+              <Label htmlFor="first_name">First Name</Label>
+              <Input
+                id="first_name"
+                type="text"
+                placeholder="John"
+                value={formData.first_name}
+                onChange={(e) => handleInputChange("first_name", e.target.value)}
+                required
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="last_name">Last Name</Label>
+              <Input
+                id="last_name"
+                type="text"
+                placeholder="Doe"
+                value={formData.last_name}
+                onChange={(e) => handleInputChange("last_name", e.target.value)}
+                required
+              />
+            </div>
           </div>
 
           <div className="grid gap-2">
@@ -127,6 +120,29 @@ export default function SignUpForm() {
               value={formData.email}
               onChange={(e) => handleInputChange("email", e.target.value)}
               required
+            />
+          </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="username">Username</Label>
+            <Input
+              id="username"
+              type="text"
+              placeholder="johndoe"
+              value={formData.username}
+              onChange={(e) => handleInputChange("username", e.target.value)}
+              required
+            />
+          </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="number">Phone Number</Label>
+            <Input
+              id="number"
+              type="tel"
+              placeholder="+1234567890"
+              value={formData.number}
+              onChange={(e) => handleInputChange("number", e.target.value)}
             />
           </div>
 

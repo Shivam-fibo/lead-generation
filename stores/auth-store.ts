@@ -14,8 +14,8 @@ interface AuthState {
 export const useAuthStore = create<AuthState>()(
   devtools(
     (set) => ({
-      user: null,
-      isAuthenticated: false,
+      user: typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('currentUser') || "null") : null,
+      isAuthenticated: typeof window !== 'undefined' && !!localStorage.getItem('authToken'),
       isLoading: true,
       setUser: (user) =>
         set({
@@ -24,12 +24,17 @@ export const useAuthStore = create<AuthState>()(
           isLoading: false,
         }),
       setLoading: (isLoading) => set({ isLoading }),
-      logout: () =>
+      logout: () => {
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('authToken')
+          localStorage.removeItem('currentUser')
+        }
         set({
           user: null,
           isAuthenticated: false,
           isLoading: false,
-        }),
+        })
+      },
     }),
     {
       name: "auth-store",

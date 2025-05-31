@@ -12,13 +12,8 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Plus, Upload } from "lucide-react"
-
-interface User {
-  id: number
-  email: string
-  role: string
-  name: string
-}
+import { useAuthStore } from "@/stores/auth-store"
+import type { User } from "@/lib/api"
 
 interface TeamMember {
   id: number
@@ -81,26 +76,33 @@ const defaultTeamMembers: TeamMember[] = [
 ]
 
 export default function TeamManagement() {
-  const [user, setUser] = useState<User | null>(null)
+  const { user, isAuthenticated, isLoading } = useAuthStore()
   const [members, setMembers] = useState<TeamMember[]>(defaultTeamMembers)
   const [showForm, setShowForm] = useState(false)
   const [editingMember, setEditingMember] = useState<TeamMember | null>(null)
   const [isPageLoading, setIsPageLoading] = useState(true)
   const router = useRouter()
 
+  console.log('Team Page Auth State:', { 
+    user,
+    isAuthenticated,
+    localStorageToken: localStorage.getItem('authToken'),
+    localStorageUser: localStorage.getItem('currentUser')
+  })
+
   useEffect(() => {
-    const currentUser = localStorage.getItem("currentUser")
-    if (!currentUser) {
-      router.push("/")
-      return
-    }
+    if (!isLoading) {  // Only redirect after initial loading is complete
+      if (!user || !isAuthenticated) {
+        console.log('No authenticated user, redirecting to login')
+        router.push("/")
+        return
+      }
 
-    const userData = JSON.parse(currentUser)
-    setUser(userData)
-
-    if (userData.role !== "Admin") {
-      router.push("/dashboard")
-      return
+      if (user.roles[0].name !== "Admin") {
+        console.log('User is not admin, redirecting to dashboard')
+        router.push("/dashboard")
+        return
+      }
     }
 
     // Load team members
@@ -120,7 +122,7 @@ export default function TeamManagement() {
     setTimeout(() => {
       setIsPageLoading(false)
     }, 800)
-  }, [router])
+  }, [router, user])
 
   const handleAddMember = (memberData: Omit<TeamMember, "id">) => {
     const newMember = {

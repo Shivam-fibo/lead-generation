@@ -11,6 +11,7 @@ import { Progress } from "@/components/ui/progress"
 import { BarChart3, Users, Target, TrendingUp, Filter } from "lucide-react"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import { Bar, BarChart, Pie, PieChart, Cell, XAxis, YAxis } from "recharts"
+import { useAuthStore } from "@/stores/auth-store"
 
 interface User {
   role: string
@@ -326,30 +327,30 @@ const chartConfig = {
 const COLORS = ["hsl(var(--chart-1))", "hsl(var(--chart-2))", "hsl(var(--chart-3))", "hsl(var(--chart-4))"]
 
 export default function ProgressMonitor() {
-  const [user, setUser] = useState<User | null>(null)
+  const { user, isAuthenticated, isLoading } = useAuthStore()
   const [tasks, setTasks] = useState<Task[]>([])
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>(defaultTeamMembers)
   const [teamProgress, setTeamProgress] = useState<TeamProgress[]>([])
   const [departmentProgress, setDepartmentProgress] = useState<DepartmentProgress[]>([])
   const [roleFilter, setRoleFilter] = useState<string>("all")
   const [departmentFilter, setDepartmentFilter] = useState<string>("all")
-  const [isLoading, setIsLoading] = useState(true)
+  // const [isLoading, setIsLoading] = useState(true)
   const router = useRouter()
 
   useEffect(() => {
     const currentUser = localStorage.getItem("currentUser")
+
     if (!currentUser) {
       router.push("/")
       return
     }
 
     const userData = JSON.parse(currentUser)
-    setUser(userData)
 
-    if (userData.role !== "CEO" && userData.role !== "Admin" && userData.role !== "Team Leader") {
-      router.push("/dashboard")
-      return
-    }
+    // if (userData.role !== "CEO" && userData.role !== "Admin" && userData.role !== "Team Leader") {
+    //   router.push("/dashboard")
+    //   return
+    // }
 
     // Simulate loading time
     setTimeout(() => {
@@ -368,7 +369,6 @@ export default function ProgressMonitor() {
 
       // Load tasks
       loadTasks()
-      setIsLoading(false)
     }, 800)
   }, [router])
 
@@ -456,13 +456,13 @@ export default function ProgressMonitor() {
     fill: COLORS[index % COLORS.length],
   }))
 
-  if (!user && isLoading) {
-    return <LoadingScreen />
-  }
+  // if (!user && isLoading) {
+  //   return <LoadingScreen />
+  // }
 
-  if (!user) {
-    return null
-  }
+  // if (!user) {
+  //   return null
+  // }
 
   const filteredProgress = getFilteredProgress()
   const totalTasks = tasks.length
@@ -471,9 +471,9 @@ export default function ProgressMonitor() {
 
   return (
     <DashboardLayout breadcrumbs={[{ label: "Progress Monitor" }]}>
-      {isLoading ? (
+      {/* {isLoading ? (
         <ProgressSkeleton />
-      ) : (
+      ) : ( */}
         <div className="space-y-6">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Progress Monitor</h1>
@@ -689,7 +689,7 @@ export default function ProgressMonitor() {
             )}
           </div>
         </div>
-      )}
+      {/* )} */}
     </DashboardLayout>
   )
 }

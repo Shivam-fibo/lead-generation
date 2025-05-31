@@ -1,10 +1,48 @@
-// Mock API functions that simulate backend calls
+// API Configuration
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || "http://localhost:8001/api/v1"
+
+const buildUrl = (endpoint: string) => `${API_BASE_URL}${endpoint}`
+
+const getAuthToken = () => localStorage.getItem('authToken')
+
+async function fetchApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+  const token = getAuthToken()
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+    ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+    ...options.headers,
+  }
+
+  const response = await fetch(buildUrl(endpoint), {
+    ...options,
+    headers,
+  })
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}))
+    throw new Error(error.message || 'An error occurred')
+  }
+
+  return response.json()
+}
+
+export interface Role {
+  name: string;
+  _id: string;
+}
+
 export interface User {
-  id: number
-  email: string
-  role: string
-  name: string
-  department?: string
+  _id: string;
+  username: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  number: string;
+  roles: Role[];
+  createdAt: string;
+  updatedAt: string;
+  __v: number;
+  refresh_token?: string;
 }
 
 export interface TeamMember {
@@ -45,60 +83,52 @@ const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
 // Auth API
 export const authApi = {
-  login: async (email: string, password: string): Promise<User> => {
-    await delay(1000)
+  login: async (username_or_email: string, password: string): Promise<User> => {
 
-    const mockUsers = [
-      { id: 1, email: "ceo@company.com", password: "password", role: "CEO", name: "John Smith" },
-      { id: 2, email: "admin@company.com", password: "password", role: "Admin", name: "Sarah Johnson" },
-      { id: 3, email: "leader@company.com", password: "password", role: "Team Leader", name: "Mike Davis" },
-      { id: 4, email: "member@company.com", password: "password", role: "Team Member", name: "Lisa Wilson" },
-    ]
-
-    const user = mockUsers.find((u) => u.email === email && u.password === password)
-    if (!user) {
-      throw new Error("Invalid credentials")
-    }
-
-    const { password: _, ...userWithoutPassword } = user
-    localStorage.setItem("currentUser", JSON.stringify(userWithoutPassword))
-    return userWithoutPassword
-  },
-
-  register: async (userData: Omit<User, "id"> & { password: string }): Promise<User> => {
-    await delay(1000)
-
-    const existingUsers = JSON.parse(localStorage.getItem("registeredUsers") || "[]")
-    const userExists = existingUsers.find((user: any) => user.email === userData.email)
-
-    if (userExists) {
-      throw new Error("User already exists")
-    }
-
-    const newUser = {
-      id: Date.now(),
-      name: userData.name,
-      email: userData.email,
-      role: userData.role,
-      department: userData.department,
-    }
-
-    const updatedUsers = [...existingUsers, { ...newUser, password: userData.password }]
-    localStorage.setItem("registeredUsers", JSON.stringify(updatedUsers))
-    localStorage.setItem("currentUser", JSON.stringify(newUser))
-
-    return newUser
+    const response = await fetchApi<{ user: User; accessToken: string }>('/login', {
+      method: 'POST',
+      body: JSON.stringify({ username_or_email, password }),
+    })
+    // Save both the token and user data
+    localStorage.setItem('authToken', response.accessToken)
+    localStorage.setItem("currentUser", JSON.stringify(response.user))
+    return response.user
   },
 
   getCurrentUser: async (): Promise<User | null> => {
-    await delay(100)
-    const user = localStorage.getItem("currentUser")
-    return user ? JSON.parse(user) : null
+    try {
+      const token = getAuthToken();
+      if (!token) return null;
+      const response = await fetchApi<{ user: User }>('/user')
+      return response.user
+    } catch (error) {
+      // localStorage.removeItem('authToken')
+      // localStorage.removeItem("currentUser")
+      throw error;
+    }
+  },
+
+  register: async (userData: Omit<User, "id"> & { password: string }): Promise<User> => {
+    const response = await fetchApi<{ user: User }>('/register', {
+      method: 'POST',
+      body: JSON.stringify(userData),
+    })
+
+    localStorage.setItem("currentUser", JSON.stringify(response.user))
+    return response.user
   },
 
   logout: async (): Promise<void> => {
-    await delay(100)
-    localStorage.removeItem("currentUser")
+    try {
+      await fetchApi('/logout', { method: 'POST' })
+    } catch (error) {
+      // Continue with local logout even if API call fails
+      console.error('Logout API call failed:', error)
+    } finally {
+      // Always clear local storage
+      localStorage.removeItem('authToken')
+      localStorage.removeItem('currentUser')
+    }
   },
 }
 

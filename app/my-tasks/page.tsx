@@ -11,15 +11,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { format } from "date-fns"
 import { Clock, Target, Volume2, CheckCircle, AlertCircle } from "lucide-react"
-
-interface User {
-  id: number
-  name: string
-  role: string
-}
+import { useAuthStore } from "@/stores/auth-store"
+import type { User } from "@/lib/api"
 
 interface TeamMember {
-  id: number
+  id: string
   name: string
   email: string
   role: string
@@ -28,7 +24,7 @@ interface TeamMember {
 }
 
 interface Task {
-  id: number
+  id: string
   title: string
   description: string
   assignedTo: TeamMember
@@ -41,7 +37,7 @@ interface Task {
 }
 
 export default function MyTasks() {
-  const [user, setUser] = useState<User | null>(null)
+  const { user } = useAuthStore()
   const [tasks, setTasks] = useState<Task[]>([])
   const [filteredTasks, setFilteredTasks] = useState<Task[]>([])
   const [statusFilter, setStatusFilter] = useState<string>("all")
@@ -52,22 +48,17 @@ export default function MyTasks() {
   const router = useRouter()
 
   useEffect(() => {
-    const currentUser = localStorage.getItem("currentUser")
-    if (!currentUser) {
+    if (!user) {
       router.push("/")
       return
     }
 
-    const userData = JSON.parse(currentUser)
-    setUser(userData)
-
-    // Simulate loading time
     setTimeout(() => {
       // Load tasks assigned to current user
-      loadMyTasks(userData.id)
+      loadMyTasks(user._id)
       setIsLoading(false)
     }, 800)
-  }, [router])
+  }, [router, user])
 
   useEffect(() => {
     // Filter tasks based on selected filters
@@ -84,7 +75,7 @@ export default function MyTasks() {
     setFilteredTasks(filtered)
   }, [tasks, statusFilter, priorityFilter])
 
-  const loadMyTasks = (userId: number) => {
+  const loadMyTasks = (userId: string) => {
     const savedTasks = localStorage.getItem("allTasks") || "[]"
     const allTasks = JSON.parse(savedTasks)
 
@@ -100,7 +91,7 @@ export default function MyTasks() {
     setTasks(tasksWithDates)
   }
 
-  const updateTaskStatus = (taskId: number, newStatus: "not-started" | "in-progress" | "completed") => {
+  const updateTaskStatus = (taskId: string, newStatus: "not-started" | "in-progress" | "completed") => {
     const updatedTasks = tasks.map((task) => (task.id === taskId ? { ...task, status: newStatus } : task))
     setTasks(updatedTasks)
 

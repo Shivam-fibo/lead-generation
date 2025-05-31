@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -10,65 +10,66 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Target } from "lucide-react"
+import { useAuth } from "@/hooks/use-auth"
 
 export default function LoginForm() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
-  const [error, setError] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
+  const { login, isLoading, loginError: error, user, isAuthenticated } = useAuth()
+  
+  // Debug current auth state
+  useEffect(() => {
+    console.log('Current auth state:', { user, isAuthenticated })
+   
+  }, [user, isAuthenticated])
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
-    setIsLoading(true)
-    setError("")
-
     try {
-      // Simulate API call delay
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-
-      const mockUsers = [
-        { id: 1, email: "ceo@company.com", password: "password", role: "CEO", name: "John Smith" },
-        { id: 2, email: "admin@company.com", password: "password", role: "Admin", name: "Sarah Johnson" },
-        { id: 3, email: "leader@company.com", password: "password", role: "Team Leader", name: "Mike Davis" },
-        { id: 4, email: "member@company.com", password: "password", role: "Team Member", name: "Lisa Wilson" },
-      ]
-
-      const user = mockUsers.find((u) => u.email === email && u.password === password)
-      if (!user) {
-        setError("Invalid credentials")
-        setIsLoading(false)
-        return
-      }
-
-      const { password: _, ...userWithoutPassword } = user
-      localStorage.setItem("currentUser", JSON.stringify(userWithoutPassword))
-      router.push("/dashboard")
+      await login(
+        { username_or_email: email, password },
+        {
+          onSuccess: (data) => {
+            console.log('Login successful:', data)
+            if (data) {
+              router.push("/dashboard")
+            } else {
+              console.error('No user data received after login')
+            }
+          },
+          onError: (err) => {
+            console.error('Login error:', err)
+          },
+        }
+      )
     } catch (err) {
-      setError("Login failed. Please try again.")
-      setIsLoading(false)
+      console.error('Login error:', err)
     }
   }
 
   const handleQuickLogin = async (role: string) => {
-    setIsLoading(true)
-    setError("")
-
     const credentials = {
-      CEO: { email: "ceo@company.com", password: "password" },
-      Admin: { email: "admin@company.com", password: "password" },
-      "Team Leader": { email: "leader@company.com", password: "password" },
-      "Team Member": { email: "member@company.com", password: "password" },
+      CEO: { email: "john_phlexi@yopmail.com", password: "john_phlexi" },
+      Admin: { email: "admin_phlex1@yopmail.com", password: "admin@1234" },
+      "Team Leader": { email: "bean_phlexi@yopmail.com", password: "bean_phlexi" },
+      "Team Member": { email: "danny_phlexi@yopmail.com", password: "danny_phlexi" },
     }
 
     const cred = credentials[role as keyof typeof credentials]
+    
     if (cred) {
-      setEmail(cred.email)
-      setPassword(cred.password)
-
-      // Trigger login with these credentials
-      const event = { preventDefault: () => {} } as React.FormEvent
-      await handleLogin(event)
+      try {
+        login(
+          { username_or_email: cred.email, password: cred.password },
+          {
+            onSuccess: () => router.push("/dashboard"),
+            onError: (err) => console.error(err),
+          }
+        )
+      } catch (err) {
+        console.error('Quick login error:', err)
+      }
     }
   }
 
@@ -159,16 +160,16 @@ export default function LoginForm() {
         </CardHeader>
         <CardContent className="text-xs text-muted-foreground space-y-1">
           <p>
-            <strong>CEO:</strong> ceo@company.com / password
+            <strong>CEO:</strong> john_phlexi@yopmail.com / john_phlexi
           </p>
           <p>
-            <strong>Admin:</strong> admin@company.com / password
+            <strong>Admin:</strong> admin_phlex1@yopmail.com / admin@1234
           </p>
           <p>
-            <strong>Team Leader:</strong> leader@company.com / password
+            <strong>Team Leader:</strong> bean_phlexi@yopmail.com / bean_phlexi
           </p>
           <p>
-            <strong>Team Member:</strong> member@company.com / password
+            <strong>Team Member:</strong> danny_phlexi@yopmail.com / danny_phlexi
           </p>
         </CardContent>
       </Card>

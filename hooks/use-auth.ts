@@ -18,11 +18,15 @@ export function useAuth() {
   })
 
   const loginMutation = useMutation({
-    mutationFn: ({ email, password }: { email: string; password: string }) => authApi.login(email, password),
+    mutationFn: ({ username_or_email, password }: { username_or_email: string; password: string }) => authApi.login(username_or_email, password),
     onSuccess: (user) => {
+      console.log('Login successful, setting user:', user)
       setUser(user)
       queryClient.setQueryData(["currentUser"], user)
     },
+    onError: (error) => {
+      console.error('Login failed:', error)
+    }
   })
 
   const registerMutation = useMutation({

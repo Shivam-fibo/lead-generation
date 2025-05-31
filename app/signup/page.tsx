@@ -1,20 +1,19 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect } from "react"
 import { useRouter } from "next/navigation"
 import SignUpForm from "@/components/signup-form"
+import { useAuthStore } from "@/stores/auth-store"
 
 export default function SignUpPage() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const { user, isAuthenticated } = useAuthStore()
   const router = useRouter()
 
   useEffect(() => {
-    const user = localStorage.getItem("currentUser")
-    if (user) {
-      setIsAuthenticated(true)
+    if (user && isAuthenticated) {
       router.push("/dashboard")
     }
-  }, [router])
+  }, [router, user, isAuthenticated])
 
   if (isAuthenticated) {
     return null // Will redirect to dashboard

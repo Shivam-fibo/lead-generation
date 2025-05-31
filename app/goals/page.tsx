@@ -32,9 +32,8 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Plus, Target, Clock, CheckCircle, Edit, Eye, Trash2, Users } from "lucide-react"
 
-interface User {
-  role: string
-}
+import { useAuthStore } from "@/stores/auth-store"
+import type { User } from "@/lib/api"
 
 interface TeamMember {
   id: number
@@ -131,7 +130,7 @@ const mockGoals: Goal[] = [
 ]
 
 export default function GoalsPage() {
-  const [user, setUser] = useState<User | null>(null)
+  const { user } = useAuthStore()
   const [goals, setGoals] = useState<Goal[]>(mockGoals)
   const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null)
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null)
@@ -146,16 +145,13 @@ export default function GoalsPage() {
   const router = useRouter()
 
   useEffect(() => {
-    const currentUser = localStorage.getItem("currentUser")
-    if (!currentUser) {
+    if (!user) {
       router.push("/")
       return
     }
 
-    const userData = JSON.parse(currentUser)
-    setUser(userData)
-
-    if (userData.role !== "CEO" && userData.role !== "Admin") {
+    const userRole = user.roles[0]?.name
+    if (userRole !== "CEO" && userRole !== "Admin") {
       router.push("/dashboard")
       return
     }

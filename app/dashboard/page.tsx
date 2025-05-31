@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Users, Target, FileText, BarChart3, TrendingUp, Activity } from "lucide-react"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import { Bar, BarChart, Line, LineChart, XAxis, YAxis } from "recharts"
+import { useAuthStore } from "@/stores/auth-store"
 
 interface User {
   id: number
@@ -54,32 +55,28 @@ const chartConfig = {
 }
 
 export default function Dashboard() {
-  const [user, setUser] = useState<User | null>(null)
+  const { user } = useAuthStore()
   const [isPageLoading, setIsPageLoading] = useState(true)
   const router = useRouter()
 
   useEffect(() => {
-    const currentUser = localStorage.getItem("currentUser")
-    if (!currentUser) {
+    if (!user) {
       router.push("/")
       return
     }
-
-    // Immediate user setup
-    setUser(JSON.parse(currentUser))
 
     // Simulate content loading
     setTimeout(() => {
       setIsPageLoading(false)
     }, 300)
-  }, [router])
+  }, [router, user])
 
   if (!user) {
     return null
   }
 
-  const canManageTeam = user.role === "Admin"
-  const canCreateGoals = user.role === "CEO" || user.role === "Admin"
+  const canManageTeam = user.roles[0].name === "Admin"
+  const canCreateGoals = user.roles[0].name === "CEO" || user.roles[0].name === "Admin"
 
   return (
     <PageWrapper>
@@ -89,7 +86,7 @@ export default function Dashboard() {
         ) : (
           <div className="space-y-6">
             <div>
-              <h1 className="text-3xl font-bold tracking-tight">Welcome back, {user.name}</h1>
+              <h1 className="text-3xl font-bold tracking-tight">Welcome back, {user.first_name}</h1>
               <p className="text-muted-foreground">Here's what's happening with your team today.</p>
             </div>
 
