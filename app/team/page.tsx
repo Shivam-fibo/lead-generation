@@ -77,18 +77,23 @@ const defaultTeamMembers: TeamMember[] = [
 
 export default function TeamManagement() {
   const { user, isAuthenticated, isLoading } = useAuthStore()
-  const [members, setMembers] = useState<TeamMember[]>(defaultTeamMembers)
+  const [members, setMembers] = useState<TeamMember[]>([])
   const [showForm, setShowForm] = useState(false)
   const [editingMember, setEditingMember] = useState<TeamMember | null>(null)
   const [isPageLoading, setIsPageLoading] = useState(true)
   const router = useRouter()
 
-  console.log('Team Page Auth State:', { 
-    user,
-    isAuthenticated,
-    localStorageToken: localStorage.getItem('authToken'),
-    localStorageUser: localStorage.getItem('currentUser')
-  })
+  // Debug auth state only in browser
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      console.log('Team Page Auth State:', { 
+        user,
+        isAuthenticated,
+        localStorageToken: localStorage.getItem('authToken'),
+        localStorageUser: localStorage.getItem('currentUser')
+      })
+    }
+  }, [user, isAuthenticated])
 
   useEffect(() => {
     if (!isLoading) {  // Only redirect after initial loading is complete
@@ -105,24 +110,33 @@ export default function TeamManagement() {
       }
     }
 
-    // Load team members
-    const savedTeamMembers = localStorage.getItem("teamMembers")
-    if (savedTeamMembers) {
-      try {
-        const parsedMembers = JSON.parse(savedTeamMembers)
-        if (Array.isArray(parsedMembers) && parsedMembers.length > 0) {
-          setMembers(parsedMembers)
+    // Load team members only in browser
+    if (typeof window !== 'undefined') {
+      const savedTeamMembers = localStorage.getItem("teamMembers")
+      if (savedTeamMembers) {
+        try {
+          const parsedMembers = JSON.parse(savedTeamMembers)
+          if (Array.isArray(parsedMembers) && parsedMembers.length > 0) {
+            setMembers(parsedMembers)
+          } else {
+            setMembers(defaultTeamMembers)
+          }
+        } catch (error) {
+          console.error("Error parsing team members:", error)
+          setMembers(defaultTeamMembers)
         }
-      } catch (error) {
-        console.error("Error parsing team members:", error)
+      } else {
+        setMembers(defaultTeamMembers)
       }
     }
 
     // Simulate loading time
-    setTimeout(() => {
+    const timer = setTimeout(() => {
       setIsPageLoading(false)
     }, 800)
-  }, [router, user])
+
+    return () => clearTimeout(timer)
+  }, [isLoading, router, user, isAuthenticated])
 
   const handleAddMember = (memberData: Omit<TeamMember, "id">) => {
     const newMember = {
@@ -131,7 +145,9 @@ export default function TeamManagement() {
     }
     const updatedMembers = [...members, newMember]
     setMembers(updatedMembers)
-    localStorage.setItem("teamMembers", JSON.stringify(updatedMembers))
+    if (typeof window !== 'undefined') {
+      localStorage.setItem("teamMembers", JSON.stringify(updatedMembers))
+    }
     setShowForm(false)
   }
 
@@ -140,7 +156,9 @@ export default function TeamManagement() {
 
     const updatedMembers = members.map((m) => (m.id === editingMember.id ? { ...memberData, id: editingMember.id } : m))
     setMembers(updatedMembers)
-    localStorage.setItem("teamMembers", JSON.stringify(updatedMembers))
+    if (typeof window !== 'undefined') {
+      localStorage.setItem("teamMembers", JSON.stringify(updatedMembers))
+    }
     setEditingMember(null)
     setShowForm(false)
   }
@@ -148,7 +166,9 @@ export default function TeamManagement() {
   const handleDeleteMember = (id: number) => {
     const updatedMembers = members.filter((m) => m.id !== id)
     setMembers(updatedMembers)
-    localStorage.setItem("teamMembers", JSON.stringify(updatedMembers))
+    if (typeof window !== 'undefined') {
+      localStorage.setItem("teamMembers", JSON.stringify(updatedMembers))
+    }
   }
 
   const handleCSVUpload = (event: React.ChangeEvent<HTMLInputElement>) => {

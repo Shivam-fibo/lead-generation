@@ -1,5 +1,6 @@
 // API Configuration
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || "http://localhost:8001/api/v1"
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
+
 
 const buildUrl = (endpoint: string) => `${API_BASE_URL}${endpoint}`
 
@@ -84,6 +85,9 @@ const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 // Auth API
 export const authApi = {
   login: async (username_or_email: string, password: string): Promise<User> => {
+
+    console.log('process.env.NEXT_PUBLIC_API_BASE_URL', process.env.NEXT_PUBLIC_API_BASE_URL)
+
 
     const response = await fetchApi<{ user: User; accessToken: string }>('/login', {
       method: 'POST',
