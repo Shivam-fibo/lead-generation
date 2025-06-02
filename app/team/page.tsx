@@ -35,9 +35,11 @@ export default function TeamManagement() {
     members: apiMembers,
     isLoading: teamLoading,
     addMember: addTeamMember,
+    addMembersCsv,
     updateMember: updateTeamMember,
     deleteMember: deleteTeamMember,
     isAddingMember,
+    isAddingMembersCsv,
     isUpdatingMember
   } = useTeam()
 
@@ -79,30 +81,50 @@ export default function TeamManagement() {
 
   const handleDeleteMember = (id: string) => {
     deleteTeamMember(id)
-  }
-
-  const handleCSVUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  }  
+    const handleCSVUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (!file) return
 
     const reader = new FileReader()
     reader.onload = (e) => {
       const csv = e.target?.result as string
-      const lines = csv.split("\n")
+      const lines = csv.split("\n").filter(line => line.trim())
+      const members: Omit<TeamMember, "_id">[] = []
 
+      // Skip header row
       for (let i = 1; i < lines.length; i++) {
-        const values = lines[i].split(",").map((v) => v.trim())
-        if (values.length >= 5) {
-          const newMember = {
-            name: values[0],
-            email: values[1],
-            role: values[2],
-            skillTags: values[3].split(";").map((s) => s.trim()),
-            department: values[4],
+        const values = lines[i].match(/(?:\"([^\"]*)\"|([^,]+))/g)?.map(v => 
+          v.trim().replace(/^"|"$/g, '').trim()
+        ) || []
+
+        if (values.length >= 6) {
+          try {
+            const roleId = values[5] || "68381f3578431cf9a9e1bba5" // Default to Team Member role if not specified
+            const roleName = "Team Member" // Default role name
+            
+            const newMember = {
+              username: values[0],
+              email: values[1],
+              first_name: values[2],
+              last_name: values[3],
+              number: values[4],
+              roles: [{ _id: roleId, name: roleName }],
+              password: values[6] || 'default123',
+            }
+            members.push(newMember)
+          } catch (error) {
+            console.error(`Error processing line ${i + 1}:`, error)
           }
-          // handleAddMember(newMember)
         }
       }
+
+      if (members.length > 0) {
+        addMembersCsv(members)
+      }
+    }
+    reader.onerror = (error) => {
+      console.error('Error reading CSV file:', error)
     }
     reader.readAsText(file)
   }

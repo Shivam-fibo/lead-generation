@@ -164,6 +164,18 @@ export const teamApi = {
     }
   },
 
+  addTeamMembersCsv: async (members: Omit<TeamMember, "_id">[]): Promise<TeamMember[]> => {
+    try {
+      const response = await fetchApi<{ users: TeamMember[] }>('/csv-add-member', {
+        method: 'POST',
+        body: JSON.stringify({ users: members })
+      });
+      return response.users;
+    } catch (error) {
+      throw error;
+    }
+  },
+
   updateTeamMember: async (id: string, member: Partial<TeamMember>): Promise<TeamMember> => {
     try {
       const response = await fetchApi<{ user: TeamMember }>(`/user/${id}`, {

@@ -42,6 +42,15 @@ export function useTeam() {
     },
   })
 
+  const addMembersCsvMutation = useMutation({
+    mutationFn: (members: Omit<TeamMember, "_id">[]) => teamApi.addTeamMembersCsv(members),
+    onSuccess: (newMembers) => {
+      // Add all new members to the store
+      newMembers.forEach(member => addMember(member));
+      queryClient.invalidateQueries({ queryKey: ["teamMembers"] });
+    },
+  });
+
   // Update store when query data changes
   React.useEffect(() => {
     if (teamMembers) {
@@ -53,9 +62,11 @@ export function useTeam() {
     members: members.length > 0 ? members : teamMembers || [],
     isLoading,
     addMember: addMemberMutation.mutate,
+    addMembersCsv: addMembersCsvMutation.mutate,
     updateMember: (id: string, member: Partial<TeamMember>) => updateMemberMutation.mutate({ id, member }),
     deleteMember: deleteMemberMutation.mutate,
     isAddingMember: addMemberMutation.isPending,
+    isAddingMembersCsv: addMembersCsvMutation.isPending,
     isUpdatingMember: updateMemberMutation.isPending,
     // isDeletingMember: deleteMemberMutation.isPending,
   }
