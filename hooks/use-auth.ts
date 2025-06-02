@@ -45,7 +45,6 @@ export function useAuth() {
     },
   })
 
-  // Update store when query data changes
   React.useEffect(() => {
     if (currentUser !== undefined) {
       setUser(currentUser)

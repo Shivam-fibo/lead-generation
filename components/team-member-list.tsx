@@ -19,19 +19,26 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Edit, Trash2, Search } from "lucide-react"
 
+interface Role {
+  _id: string;
+  name: string;
+}
+
 interface TeamMember {
-  id: number
-  name: string
-  email: string
-  role: string
-  skillTags: string[]
-  department: string
+  _id: string;
+  username: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  number: string;
+  roles: Role[];
+  password: string;
 }
 
 interface TeamMemberListProps {
   members: TeamMember[]
   onEdit: (member: TeamMember) => void
-  onDelete: (id: number) => void
+  onDelete: (id: string) => void
 }
 
 export default function TeamMemberList({ members, onEdit, onDelete }: TeamMemberListProps) {
@@ -39,11 +46,11 @@ export default function TeamMemberList({ members, onEdit, onDelete }: TeamMember
 
   const filteredMembers = members.filter(
     (member) =>
-      member.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      member.first_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       member.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      member.role.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      member.department.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      member.skillTags.some((skill) => skill.toLowerCase().includes(searchTerm.toLowerCase())),
+      member.roles[0].name.toLowerCase().includes(searchTerm.toLowerCase()) 
+      // member.department.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      // member.skillTags.some((skill) => skill.toLowerCase().includes(searchTerm.toLowerCase())),
   )
 
   return (
@@ -69,21 +76,21 @@ export default function TeamMemberList({ members, onEdit, onDelete }: TeamMember
                 <TableHead>Email</TableHead>
                 <TableHead>Role</TableHead>
                 <TableHead>Department</TableHead>
-                <TableHead>Skills</TableHead>
+                {/* <TableHead>Skills</TableHead> */}
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredMembers.map((member) => (
-                <TableRow key={member.id}>
-                  <TableCell className="font-medium">{member.name}</TableCell>
+                <TableRow key={member._id}>
+                  <TableCell className="font-medium">{member.first_name}</TableCell>
                   <TableCell>{member.email}</TableCell>
                   <TableCell>
-                    <Badge variant="outline">{member.role}</Badge>
+                    <Badge variant="outline">{member.roles[0].name}</Badge>
                   </TableCell>
-                  <TableCell>{member.department}</TableCell>
-                  <TableCell>
-                    <div className="flex flex-wrap gap-1">
+                  <TableCell> - </TableCell>
+                  {/* <TableCell>
+                     <div className="flex flex-wrap gap-1">
                       {member.skillTags.slice(0, 3).map((skill) => (
                         <Badge key={skill} variant="secondary" className="text-xs">
                           {skill}
@@ -95,7 +102,7 @@ export default function TeamMemberList({ members, onEdit, onDelete }: TeamMember
                         </Badge>
                       )}
                     </div>
-                  </TableCell>
+                  </TableCell> */}
                   <TableCell>
                     <div className="flex space-x-2">
                       <Button variant="outline" size="sm" onClick={() => onEdit(member)}>
@@ -111,12 +118,12 @@ export default function TeamMemberList({ members, onEdit, onDelete }: TeamMember
                           <AlertDialogHeader>
                             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                             <AlertDialogDescription>
-                              This action cannot be undone. This will permanently delete {member.name} from the team.
+                              This action cannot be undone. This will permanently delete {member.first_name} from the team.
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
                             <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => onDelete(member.id)}>Delete</AlertDialogAction>
+                            <AlertDialogAction onClick={() => onDelete(member._id)}>Delete</AlertDialogAction>
                           </AlertDialogFooter>
                         </AlertDialogContent>
                       </AlertDialog>

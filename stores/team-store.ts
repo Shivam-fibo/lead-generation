@@ -7,8 +7,8 @@ interface TeamState {
   isLoading: boolean
   setMembers: (members: TeamMember[]) => void
   addMember: (member: TeamMember) => void
-  updateMember: (id: number, member: TeamMember) => void
-  removeMember: (id: number) => void
+  updateMember: (id: string, member: Partial<TeamMember>) => void 
+  removeMember: (id: string) => void
   setLoading: (loading: boolean) => void
 }
 
@@ -19,17 +19,24 @@ export const useTeamStore = create<TeamState>()(
       isLoading: false,
       setMembers: (members) => set({ members }),
       addMember: (member) =>
+        set((state) => {
+          const updatedMembers = [...state.members, ...(Array.isArray(member) ? member : [member])];
+          return {
+            members: updatedMembers,
+          };
+        }),
+      updateMember: (id: string, member: Partial<TeamMember>) =>
         set((state) => ({
-          members: [...state.members, member],
+          members: state.members.map((m) =>
+            m._id === id ? { ...m, ...member } : m // Merge the partial update with existing member
+          ),
         })),
-      updateMember: (id, member) =>
-        set((state) => ({
-          members: state.members.map((m) => (m.id === id ? member : m)),
-        })),
-      removeMember: (id) =>
-        set((state) => ({
-          members: state.members.filter((m) => m.id !== id),
-        })),
+
+
+      // removeMember: (id) =>
+      //   set((state) => ({
+      //     members: state.members.filter((m) => m.id !== id),
+      //   })),
       setLoading: (isLoading) => set({ isLoading }),
     }),
     {

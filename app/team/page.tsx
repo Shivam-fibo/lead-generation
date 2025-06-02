@@ -1,102 +1,56 @@
 "use client"
 
 import type React from "react"
+import type { TeamMember } from "@/lib/api"
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import DashboardLayout from "@/components/dashboard-layout"
 import { LoadingScreen, TeamSkeleton } from "@/components/loading-screen"
 import TeamMemberForm from "@/components/team-member-form"
+import TeamMemberEditForm from "@/components/team-member-edit-form"
 import TeamMemberList from "@/components/team-member-list"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Plus, Upload } from "lucide-react"
 import { useAuthStore } from "@/stores/auth-store"
-import type { User } from "@/lib/api"
+import { useTeamStore } from "@/stores/team-store"
+import { useTeam } from "@/hooks/use-team"
 
-interface TeamMember {
-  id: number
-  name: string
-  email: string
-  role: string
-  skillTags: string[]
-  department: string
+
+interface AddTeamMember {
+  username: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  number: string;
+  roles: string[];
+  password: string;
 }
 
-const defaultTeamMembers: TeamMember[] = [
-  {
-    id: 1,
-    name: "John Smith",
-    email: "john.smith@company.com",
-    role: "CEO",
-    skillTags: ["Leadership", "Strategy", "Vision"],
-    department: "Executive",
-  },
-  {
-    id: 2,
-    name: "Sarah Johnson",
-    email: "sarah.johnson@company.com",
-    role: "Admin",
-    skillTags: ["Management", "Operations", "HR"],
-    department: "Administration",
-  },
-  {
-    id: 3,
-    name: "Mike Davis",
-    email: "mike.davis@company.com",
-    role: "Team Leader",
-    skillTags: ["Project Management", "Development", "Agile"],
-    department: "Engineering",
-  },
-  {
-    id: 4,
-    name: "Lisa Wilson",
-    email: "lisa.wilson@company.com",
-    role: "Team Member",
-    skillTags: ["Frontend", "React", "TypeScript"],
-    department: "Engineering",
-  },
-  {
-    id: 5,
-    name: "David Brown",
-    email: "david.brown@company.com",
-    role: "Team Member",
-    skillTags: ["Backend", "Node.js", "Database"],
-    department: "Engineering",
-  },
-  {
-    id: 6,
-    name: "Emily Chen",
-    email: "emily.chen@company.com",
-    role: "Team Member",
-    skillTags: ["Design", "UI/UX", "Figma"],
-    department: "Design",
-  },
-]
-
 export default function TeamManagement() {
-  const { user, isAuthenticated, isLoading } = useAuthStore()
-  const [members, setMembers] = useState<TeamMember[]>([])
+  const { user, isAuthenticated, isLoading: authLoading } = useAuthStore()
+  const {
+    members: apiMembers,
+    isLoading: teamLoading,
+    addMember: addTeamMember,
+    updateMember: updateTeamMember,
+    // deleteMember: deleteTeamMember,
+    isAddingMember,
+    // isUpdatingMember
+  } = useTeam()
+
+  const members = apiMembers
+
   const [showForm, setShowForm] = useState(false)
   const [editingMember, setEditingMember] = useState<TeamMember | null>(null)
-  const [isPageLoading, setIsPageLoading] = useState(true)
   const router = useRouter()
 
-  // Debug auth state only in browser
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      console.log('Team Page Auth State:', { 
-        user,
-        isAuthenticated,
-        localStorageToken: localStorage.getItem('authToken'),
-        localStorageUser: localStorage.getItem('currentUser')
-      })
-    }
-  }, [user, isAuthenticated])
+  console.log('editingMember:', editingMember)
 
   useEffect(() => {
-    if (!isLoading) {  // Only redirect after initial loading is complete
+    if (!authLoading) {
       if (!user || !isAuthenticated) {
         console.log('No authenticated user, redirecting to login')
         router.push("/")
@@ -109,67 +63,24 @@ export default function TeamManagement() {
         return
       }
     }
+  }, [authLoading, router, user, isAuthenticated])
 
-    // Load team members only in browser
-    if (typeof window !== 'undefined') {
-      const savedTeamMembers = localStorage.getItem("teamMembers")
-      if (savedTeamMembers) {
-        try {
-          const parsedMembers = JSON.parse(savedTeamMembers)
-          if (Array.isArray(parsedMembers) && parsedMembers.length > 0) {
-            setMembers(parsedMembers)
-          } else {
-            setMembers(defaultTeamMembers)
-          }
-        } catch (error) {
-          console.error("Error parsing team members:", error)
-          setMembers(defaultTeamMembers)
-        }
-      } else {
-        setMembers(defaultTeamMembers)
-      }
-    }
-
-    // Simulate loading time
-    const timer = setTimeout(() => {
-      setIsPageLoading(false)
-    }, 800)
-
-    return () => clearTimeout(timer)
-  }, [isLoading, router, user, isAuthenticated])
-
-  const handleAddMember = (memberData: Omit<TeamMember, "id">) => {
-    const newMember = {
-      ...memberData,
-      id: Math.max(...members.map((m) => m.id), 0) + 1,
-    }
-    const updatedMembers = [...members, newMember]
-    setMembers(updatedMembers)
-    if (typeof window !== 'undefined') {
-      localStorage.setItem("teamMembers", JSON.stringify(updatedMembers))
-    }
-    setShowForm(false)
+  const handleAddMember = (memberData: Omit<TeamMember, "_id">) => {
+    addTeamMember(memberData);
+    setShowForm(false);
   }
 
-  const handleEditMember = (memberData: Omit<TeamMember, "id">) => {
-    if (!editingMember) return
-
-    const updatedMembers = members.map((m) => (m.id === editingMember.id ? { ...memberData, id: editingMember.id } : m))
-    setMembers(updatedMembers)
-    if (typeof window !== 'undefined') {
-      localStorage.setItem("teamMembers", JSON.stringify(updatedMembers))
-    }
-    setEditingMember(null)
-    setShowForm(false)
+  const handleEditMember = (memberData: Partial<TeamMember>) => {    
+      if (!editingMember?._id) return;
+      updateTeamMember(editingMember._id, memberData);
+      setEditingMember(null);
+      setShowForm(false);
   }
 
-  const handleDeleteMember = (id: number) => {
-    const updatedMembers = members.filter((m) => m.id !== id)
-    setMembers(updatedMembers)
-    if (typeof window !== 'undefined') {
-      localStorage.setItem("teamMembers", JSON.stringify(updatedMembers))
-    }
-  }
+  
+  // const handleDeleteMember = (id: string) => {
+  //   deleteTeamMember(parseInt(id))
+  // }
 
   const handleCSVUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
@@ -190,7 +101,7 @@ export default function TeamManagement() {
             skillTags: values[3].split(";").map((s) => s.trim()),
             department: values[4],
           }
-          handleAddMember(newMember)
+          // handleAddMember(newMember)
         }
       }
     }
@@ -203,7 +114,7 @@ export default function TeamManagement() {
 
   return (
     <DashboardLayout>
-      {isPageLoading ? (
+      {teamLoading ? (
         <TeamSkeleton />
       ) : (
         <div className="space-y-6">
@@ -244,14 +155,24 @@ export default function TeamManagement() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <TeamMemberForm
-                      initialData={editingMember || undefined}
-                      onSubmit={editingMember ? handleEditMember : handleAddMember}
-                      onCancel={() => {
-                        setShowForm(false)
-                        setEditingMember(null)
-                      }}
-                    />
+                    {editingMember ? (
+                      <TeamMemberEditForm
+                        initialData={editingMember}
+                        onSubmit={handleEditMember}
+                        onCancel={() => {
+                          setShowForm(false)
+                          setEditingMember(null)
+                        }}
+                      />
+                    ) : (
+                      <TeamMemberForm
+                        onSubmit={handleAddMember}
+                        onCancel={() => {
+                          setShowForm(false)
+                          setEditingMember(null)
+                        }}
+                      />
+                    )}
                   </CardContent>
                 </Card>
               )}
@@ -262,7 +183,7 @@ export default function TeamManagement() {
                   setEditingMember(member)
                   setShowForm(true)
                 }}
-                onDelete={handleDeleteMember}
+              // onDelete={handleDeleteMember}
               />
             </TabsContent>
 
@@ -291,7 +212,7 @@ export default function TeamManagement() {
                     <CardTitle>Unique Skills</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-3xl font-bold">{new Set(members.flatMap((m) => m.skillTags)).size}</div>
+                    {/* <div className="text-3xl font-bold">{new Set(members.flatMap((m) => m.skillTags)).size}</div> */}
                   </CardContent>
                 </Card>
               </div>

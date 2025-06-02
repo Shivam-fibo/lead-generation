@@ -13,11 +13,11 @@ export function useTeam() {
   const { data: teamMembers, isLoading } = useQuery({
     queryKey: ["teamMembers"],
     queryFn: teamApi.getTeamMembers,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 5 * 60 * 1000, 
   })
 
   const addMemberMutation = useMutation({
-    mutationFn: (member: Omit<TeamMember, "id">) => teamApi.addTeamMember(member),
+    mutationFn: (member: Omit<TeamMember, "_id">) => teamApi.addTeamMember(member),
     onSuccess: (newMember) => {
       addMember(newMember)
       queryClient.invalidateQueries({ queryKey: ["teamMembers"] })
@@ -25,21 +25,23 @@ export function useTeam() {
   })
 
   const updateMemberMutation = useMutation({
-    mutationFn: ({ id, member }: { id: number; member: Omit<TeamMember, "id"> }) =>
+    mutationFn: ({ id, member }: { id: string; member: Partial<TeamMember> }) =>
       teamApi.updateTeamMember(id, member),
     onSuccess: (updatedMember) => {
-      updateMember(updatedMember.id, updatedMember)
+      // Update store with the full updated member from API response
+      updateMember(updatedMember._id, updatedMember)
       queryClient.invalidateQueries({ queryKey: ["teamMembers"] })
     },
   })
 
-  const deleteMemberMutation = useMutation({
-    mutationFn: (id: number) => teamApi.deleteTeamMember(id),
-    onSuccess: (_, id) => {
-      removeMember(id)
-      queryClient.invalidateQueries({ queryKey: ["teamMembers"] })
-    },
-  })
+
+  // const deleteMemberMutation = useMutation({
+  //   mutationFn: (id: number) => teamApi.deleteTeamMember(id),
+  //   onSuccess: (_, id) => {
+  //     removeMember(id)
+  //     queryClient.invalidateQueries({ queryKey: ["teamMembers"] })
+  //   },
+  // })
 
   // Update store when query data changes
   React.useEffect(() => {
@@ -52,10 +54,10 @@ export function useTeam() {
     members: members.length > 0 ? members : teamMembers || [],
     isLoading,
     addMember: addMemberMutation.mutate,
-    updateMember: (id: number, member: Omit<TeamMember, "id">) => updateMemberMutation.mutate({ id, member }),
-    deleteMember: deleteMemberMutation.mutate,
+    updateMember: (id: string, member: Partial<TeamMember>) => updateMemberMutation.mutate({ id, member }),
+    // deleteMember: deleteMemberMutation.mutate,
     isAddingMember: addMemberMutation.isPending,
     isUpdatingMember: updateMemberMutation.isPending,
-    isDeletingMember: deleteMemberMutation.isPending,
+    // isDeletingMember: deleteMemberMutation.isPending,
   }
 }
