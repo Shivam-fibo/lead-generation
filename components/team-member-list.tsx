@@ -55,7 +55,7 @@ export default function TeamMemberList({ members, onEdit, onDelete }: TeamMember
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Team Members ({members.length})</CardTitle>
         <div className="flex items-center space-x-2">
           <Search className="h-4 w-4 text-gray-400" />
@@ -72,10 +72,12 @@ export default function TeamMemberList({ members, onEdit, onDelete }: TeamMember
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Name</TableHead>
+                <TableHead>Username</TableHead>
+                <TableHead>First Name</TableHead>
+                <TableHead>Last Name</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Role</TableHead>
-                <TableHead>Department</TableHead>
+                {/* <TableHead>Department</TableHead> */}
                 {/* <TableHead>Skills</TableHead> */}
                 <TableHead>Actions</TableHead>
               </TableRow>
@@ -83,12 +85,14 @@ export default function TeamMemberList({ members, onEdit, onDelete }: TeamMember
             <TableBody>
               {filteredMembers.map((member) => (
                 <TableRow key={member._id}>
+                  <TableCell className="font-medium">{member.username}</TableCell>
                   <TableCell className="font-medium">{member.first_name}</TableCell>
+                  <TableCell className="font-medium">{member.last_name}</TableCell>
                   <TableCell>{member.email}</TableCell>
                   <TableCell>
                     <Badge variant="outline">{member.roles[0].name}</Badge>
                   </TableCell>
-                  <TableCell> - </TableCell>
+                  {/* <TableCell> - </TableCell> */}
                   {/* <TableCell>
                      <div className="flex flex-wrap gap-1">
                       {member.skillTags.slice(0, 3).map((skill) => (

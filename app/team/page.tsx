@@ -36,9 +36,9 @@ export default function TeamManagement() {
     isLoading: teamLoading,
     addMember: addTeamMember,
     updateMember: updateTeamMember,
-    // deleteMember: deleteTeamMember,
+    deleteMember: deleteTeamMember,
     isAddingMember,
-    // isUpdatingMember
+    isUpdatingMember
   } = useTeam()
 
   const members = apiMembers
@@ -70,17 +70,16 @@ export default function TeamManagement() {
     setShowForm(false);
   }
 
-  const handleEditMember = (memberData: Partial<TeamMember>) => {    
-      if (!editingMember?._id) return;
-      updateTeamMember(editingMember._id, memberData);
-      setEditingMember(null);
-      setShowForm(false);
+  const handleEditMember = (memberData: Partial<TeamMember>) => {
+    if (!editingMember?._id) return;
+    updateTeamMember(editingMember._id, memberData);
+    setEditingMember(null);
+    setShowForm(false);
   }
 
-  
-  // const handleDeleteMember = (id: string) => {
-  //   deleteTeamMember(parseInt(id))
-  // }
+  const handleDeleteMember = (id: string) => {
+    deleteTeamMember(id)
+  }
 
   const handleCSVUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
@@ -138,10 +137,10 @@ export default function TeamManagement() {
           <input id="csv-upload" type="file" accept=".csv" onChange={handleCSVUpload} className="hidden" />
 
           <Tabs defaultValue="list" className="space-y-4">
-            <TabsList>
+            {/* <TabsList>
               <TabsTrigger value="list">Team List</TabsTrigger>
               <TabsTrigger value="stats">Statistics</TabsTrigger>
-            </TabsList>
+            </TabsList> */}
 
             <TabsContent value="list" className="space-y-4">
               {showForm && (
@@ -175,19 +174,19 @@ export default function TeamManagement() {
                     )}
                   </CardContent>
                 </Card>
-              )}
-
+              )}              
+              
               <TeamMemberList
                 members={members}
                 onEdit={(member) => {
                   setEditingMember(member)
                   setShowForm(true)
                 }}
-              // onDelete={handleDeleteMember}
+                onDelete={handleDeleteMember}
               />
             </TabsContent>
 
-            <TabsContent value="stats" className="space-y-4">
+            {/* <TabsContent value="stats" className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <Card>
                   <CardHeader>
@@ -212,7 +211,7 @@ export default function TeamManagement() {
                     <CardTitle>Unique Skills</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    {/* <div className="text-3xl font-bold">{new Set(members.flatMap((m) => m.skillTags)).size}</div> */}
+                    <div className="text-3xl font-bold">{new Set(members.flatMap((m) => m.skillTags)).size}</div>
                   </CardContent>
                 </Card>
               </div>
@@ -240,7 +239,7 @@ export default function TeamManagement() {
                   </div>
                 </CardContent>
               </Card>
-            </TabsContent>
+            </TabsContent> */}
           </Tabs>
         </div>
       )}

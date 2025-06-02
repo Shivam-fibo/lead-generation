@@ -175,14 +175,15 @@ export const teamApi = {
       throw error;
     }
   },
-
-
-  // deleteTeamMember: async (id: number): Promise<void> => {
-  //   await delay(500)
-  //   const members = await teamApi.getTeamMembers()
-  //   const updated = members.filter((m) => m.id !== id)
-  //   localStorage.setItem("teamMembers", JSON.stringify(updated))
-  // },
+  deleteTeamMember: async (id: string): Promise<void> => {
+    try {
+      await fetchApi(`/user/${id}`, {
+        method: 'DELETE'
+      });
+    } catch (error) {
+      throw error;
+    }
+  },
 }
 
 // Goals API

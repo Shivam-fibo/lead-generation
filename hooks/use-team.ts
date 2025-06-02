@@ -34,14 +34,13 @@ export function useTeam() {
     },
   })
 
-
-  // const deleteMemberMutation = useMutation({
-  //   mutationFn: (id: number) => teamApi.deleteTeamMember(id),
-  //   onSuccess: (_, id) => {
-  //     removeMember(id)
-  //     queryClient.invalidateQueries({ queryKey: ["teamMembers"] })
-  //   },
-  // })
+  const deleteMemberMutation = useMutation({
+    mutationFn: (id: string) => teamApi.deleteTeamMember(id),
+    onSuccess: (_, id) => {
+      removeMember(id)
+      queryClient.invalidateQueries({ queryKey: ["teamMembers"] })
+    },
+  })
 
   // Update store when query data changes
   React.useEffect(() => {
@@ -55,7 +54,7 @@ export function useTeam() {
     isLoading,
     addMember: addMemberMutation.mutate,
     updateMember: (id: string, member: Partial<TeamMember>) => updateMemberMutation.mutate({ id, member }),
-    // deleteMember: deleteMemberMutation.mutate,
+    deleteMember: deleteMemberMutation.mutate,
     isAddingMember: addMemberMutation.isPending,
     isUpdatingMember: updateMemberMutation.isPending,
     // isDeletingMember: deleteMemberMutation.isPending,

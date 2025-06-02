@@ -30,11 +30,10 @@ export const useTeamStore = create<TeamState>()(
           members: state.members.map((m) =>
             m._id === id ? { ...m, ...member } : m // Merge the partial update with existing member
           ),
+        })),      removeMember: (id: string) =>
+        set((state) => ({
+          members: state.members.filter((m) => m._id !== id),
         })),
-
-
-      // removeMember: (id) =>
-      //   set((state) => ({
       //     members: state.members.filter((m) => m.id !== id),
       //   })),
       setLoading: (isLoading) => set({ isLoading }),
