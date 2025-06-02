@@ -81,8 +81,8 @@ export default function TeamManagement() {
 
   const handleDeleteMember = (id: string) => {
     deleteTeamMember(id)
-  }  
-    const handleCSVUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  }
+  const handleCSVUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (!file) return
 
@@ -94,7 +94,7 @@ export default function TeamManagement() {
 
       // Skip header row
       for (let i = 1; i < lines.length; i++) {
-        const values = lines[i].match(/(?:\"([^\"]*)\"|([^,]+))/g)?.map(v => 
+        const values = lines[i].match(/(?:\"([^\"]*)\"|([^,]+))/g)?.map(v =>
           v.trim().replace(/^"|"$/g, '').trim()
         ) || []
 
@@ -102,7 +102,7 @@ export default function TeamManagement() {
           try {
             const roleId = values[5] || "68381f3578431cf9a9e1bba5" // Default to Team Member role if not specified
             const roleName = "Team Member" // Default role name
-            
+
             const newMember = {
               username: values[0],
               email: values[1],
@@ -196,8 +196,8 @@ export default function TeamManagement() {
                     )}
                   </CardContent>
                 </Card>
-              )}              
-              
+              )}
+
               <TeamMemberList
                 members={members}
                 onEdit={(member) => {
