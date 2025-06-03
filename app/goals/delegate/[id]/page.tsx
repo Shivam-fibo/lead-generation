@@ -176,7 +176,7 @@ export default function TaskDelegation() {
     // Load goal and generate tasks
     loadGoalAndTasks()
     setIsLoading(false)
-  }, [router, goalId])
+  }, [router, goalId])``
 
   const loadGoalAndTasks = () => {
     // Check if tasks already exist for this goal
