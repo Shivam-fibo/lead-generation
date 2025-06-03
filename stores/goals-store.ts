@@ -7,9 +7,11 @@ interface GoalsState {
   isLoading: boolean
   setGoals: (goals: Goal[]) => void
   addGoal: (goal: Goal) => void
-  updateGoal: (id: number, goal: Partial<Goal>) => void
-  removeGoal: (id: number) => void
+  updateGoal: (id: string, goal: Partial<Goal>) => void
+  removeGoal: (id: string) => void
   setLoading: (loading: boolean) => void
+  error: string | null
+  setError: (error: string | null) => void
 }
 
 export const useGoalsStore = create<GoalsState>()(
@@ -17,6 +19,7 @@ export const useGoalsStore = create<GoalsState>()(
     (set) => ({
       goals: [],
       isLoading: false,
+      error: null,
       setGoals: (goals) => set({ goals }),
       addGoal: (goal) =>
         set((state) => ({
@@ -24,11 +27,11 @@ export const useGoalsStore = create<GoalsState>()(
         })),
       updateGoal: (id, goalUpdate) =>
         set((state) => ({
-          goals: state.goals.map((g) => (g.id === id ? { ...g, ...goalUpdate } : g)),
+          goals: state.goals.map((g) => (g._id === id ? { ...g, ...goalUpdate } : g)),
         })),
       removeGoal: (id) =>
         set((state) => ({
-          goals: state.goals.filter((g) => g.id !== id),
+          goals: state.goals.filter((g) => g._id !== id),
         })),
       setLoading: (isLoading) => set({ isLoading }),
     }),

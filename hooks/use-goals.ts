@@ -11,16 +11,16 @@ export function useGoals() {
   const queryClient = useQueryClient()
 
   const { data: goalsData, isLoading } = useQuery({
-    queryKey: ["goals"],
+    queryKey: ["goal"],
     queryFn: goalsApi.getGoals,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 5 * 60 * 1000, 
   })
 
   const createGoalMutation = useMutation({
     mutationFn: (goal: Omit<Goal, "id">) => goalsApi.createGoal(goal),
     onSuccess: (newGoal) => {
       addGoal(newGoal)
-      queryClient.invalidateQueries({ queryKey: ["goals"] })
+      queryClient.invalidateQueries({ queryKey: ["goal"] })
     },
   })
 
@@ -28,15 +28,15 @@ export function useGoals() {
     mutationFn: ({ id, goal }: { id: number; goal: Partial<Goal> }) => goalsApi.updateGoal(id, goal),
     onSuccess: (updatedGoal) => {
       updateGoal(updatedGoal.id, updatedGoal)
-      queryClient.invalidateQueries({ queryKey: ["goals"] })
+      queryClient.invalidateQueries({ queryKey: ["goal"] })
     },
   })
 
   const deleteGoalMutation = useMutation({
-    mutationFn: (id: number) => goalsApi.deleteGoal(id),
+    mutationFn: (id: string) => goalsApi.deleteGoal(id),
     onSuccess: (_, id) => {
       removeGoal(id)
-      queryClient.invalidateQueries({ queryKey: ["goals"] })
+      queryClient.invalidateQueries({ queryKey: ["goal"] })
     },
   })
 

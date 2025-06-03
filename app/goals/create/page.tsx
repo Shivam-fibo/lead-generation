@@ -4,6 +4,7 @@ import type React from "react"
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
+import { goalsApi } from "@/lib/api"
 import DashboardLayout from "@/components/dashboard-layout"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -15,12 +16,18 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Upload, Mic, MicOff, FileText, Users, Target } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { FormSkeleton } from "@/components/loading-skeleton"
+import { useToast } from "@/components/ui/use-toast"
+import { useGoals } from "@/hooks/use-goals"
+
 
 interface User {
-  id: number
+  _id: string
+  username: string
   email: string
-  role: string
-  name: string
+  first_name: string
+  last_name: string
+  number: string
+  roles: { name: string; _id: string }[]
 }
 
 interface TeamMember {
@@ -36,7 +43,7 @@ interface SubTask {
   id: number
   title: string
   description: string
-  assignedTo: TeamMember
+  assignedTo: TeamMember | null
   estimatedHours: number
   priority: "low" | "medium" | "high"
 }
@@ -102,40 +109,47 @@ export default function CreateGoal() {
   const [generatedTasks, setGeneratedTasks] = useState<SubTask[]>([])
   const [isGenerating, setIsGenerating] = useState(false)
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>(defaultTeamMembers)
-  const [isLoading, setIsLoading] = useState(true)
   const router = useRouter()
+  const { toast } = useToast()
+  const {
+    goals,
+    isLoading,
+    createGoal,
+    isCreatingGoal,
+  } = useGoals()
 
-  useEffect(() => {
-    const currentUser = localStorage.getItem("currentUser")
-    if (!currentUser) {
-      router.push("/")
-      return
-    }
 
-    const userData = JSON.parse(currentUser)
-    setUser(userData)
+  // useEffect(() => {
+  //   const currentUser = localStorage.getItem("currentUser")
+  //   if (!currentUser) {
+  //     router.push("/")
+  //     return
+  //   }
 
-    if (userData.role !== "CEO" && userData.role !== "Admin") {
-      router.push("/dashboard")
-      return
-    }
+  //   const userData = JSON.parse(currentUser)
+  //   setUser(userData)
 
-    // Load team members from localStorage or use defaults
-    const savedTeamMembers = localStorage.getItem("teamMembers")
-    if (savedTeamMembers) {
-      try {
-        const parsedMembers = JSON.parse(savedTeamMembers)
-        if (Array.isArray(parsedMembers) && parsedMembers.length > 0) {
-          setTeamMembers(parsedMembers)
-        }
-      } catch (error) {
-        console.error("Error parsing team members:", error)
-        // Keep default team members
-      }
-    }
+  //   if (userData.role !== "CEO" && userData.role !== "Admin") {
+  //     router.push("/dashboard")
+  //     return
+  //   }
 
-    setIsLoading(false)
-  }, [router])
+  //   // Load team members from localStorage or use defaults
+  //   const savedTeamMembers = localStorage.getItem("teamMembers")
+  //   if (savedTeamMembers) {
+  //     try {
+  //       const parsedMembers = JSON.parse(savedTeamMembers)
+  //       if (Array.isArray(parsedMembers) && parsedMembers.length > 0) {
+  //         setTeamMembers(parsedMembers)
+  //       }
+  //     } catch (error) {
+  //       console.error("Error parsing team members:", error)
+  //       // Keep default team members
+  //     }
+  //   }
+
+  //   setIsLoading(false)
+  // }, [router])
 
   const handleVoiceInput = () => {
     if (!isRecording) {
@@ -229,24 +243,31 @@ export default function CreateGoal() {
     setIsGenerating(false)
   }
 
-  const handleSubmit = () => {
-    if (!user) return
-
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    console.log('checking submit')
+    const now = "date"
     const newGoal = {
-      id: Date.now(),
+      _id: "",
       title: goalTitle,
       description: goalDescription,
-      status: "active",
-      createdAt: new Date().toISOString().split("T")[0],
-      assignedTasks: generatedTasks.length,
-      completedTasks: 0,
-      tasks: generatedTasks,
+      priority: "medium" as const,
+      status: "pending" as const,
+      created_by: "",
+      tags: [],
+      attachments: uploadedFiles.map(file => ({
+        filename: file.name,
+        url: URL.createObjectURL(file),
+        uploaded_at: new Date()
+      })),
+      // tasks: generatedTasks.map(task => task.title),
+      due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+      createdAt: now,
+      updatedAt: now,
+      assignedTasksCount: generatedTasks.length,
+      completedTasksCount: 0
     }
-
-    // Save to localStorage
-    const existingGoals = JSON.parse(localStorage.getItem("goals") || "[]")
-    localStorage.setItem("goals", JSON.stringify([...existingGoals, newGoal]))
-
+    createGoal(newGoal)    
     router.push("/goals")
   }
 
@@ -263,17 +284,16 @@ export default function CreateGoal() {
     }
   }
 
-  if (isLoading) {
-    return (
-      <DashboardLayout>
-        <FormSkeleton />
-      </DashboardLayout>
-    )
-  }
-
-  if (!user) {
-    return null
-  }
+  // if (isLoading) {
+  //   return (
+  //     <DashboardLayout>
+  //       <FormSkeleton />
+  //     </DashboardLayout>
+  //   )
+  // }
+  //   if (!user) {
+  //     return null
+  //   }
 
   return (
     <DashboardLayout>
@@ -454,10 +474,10 @@ export default function CreateGoal() {
                             {skill}
                           </Badge>
                         )) || (
-                          <Badge variant="secondary" className="text-xs">
-                            No Skills
-                          </Badge>
-                        )}
+                            <Badge variant="secondary" className="text-xs">
+                              No Skills
+                            </Badge>
+                          )}
                       </div>
                     </div>
 

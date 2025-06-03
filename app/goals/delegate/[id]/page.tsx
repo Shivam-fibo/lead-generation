@@ -146,19 +146,19 @@ export default function TaskDelegation() {
   const goalId = params.id as string
 
   useEffect(() => {
-    const currentUser = localStorage.getItem("currentUser")
-    if (!currentUser) {
-      router.push("/")
-      return
-    }
+    // const currentUser = localStorage.getItem("currentUser")
+    // if (!currentUser) {
+    //   router.push("/")
+    //   return
+    // }
 
-    const userData = JSON.parse(currentUser)
-    setUser(userData)
+    // const userData = JSON.parse(currentUser)
+    // setUser(userData)
 
-    if (userData.role !== "CEO" && userData.role !== "Admin" && userData.role !== "Team Leader") {
-      router.push("/dashboard")
-      return
-    }
+    // if (userData.role !== "CEO" && userData.role !== "Admin" && userData.role !== "Team Leader") {
+    //   router.push("/dashboard")
+    //   return
+    // }
 
     // Load team members
     const savedTeamMembers = localStorage.getItem("teamMembers")
@@ -410,19 +410,19 @@ export default function TaskDelegation() {
     }
   }
 
-  if (isLoading) {
-    return (
-      <DashboardLayout>
-        <div className="flex items-center justify-center h-64">
-          <div className="text-lg">Loading...</div>
-        </div>
-      </DashboardLayout>
-    )
-  }
+  // if (isLoading) {
+  //   return (
+  //     <DashboardLayout>
+  //       <div className="flex items-center justify-center h-64">
+  //         <div className="text-lg">Loading...</div>
+  //       </div>
+  //     </DashboardLayout>
+  //   )
+  // }
 
-  if (!user || !goal) {
-    return null
-  }
+  // if (!user || !goal) {
+  //   return null
+  // }
 
   return (
     <DashboardLayout>

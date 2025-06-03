@@ -1,6 +1,6 @@
 // API Configuration
-// const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_LOCAL_URL
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_LOCAL_URL
+// const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
 
 
 const buildUrl = (endpoint: string) => `${API_BASE_URL}${endpoint}`
@@ -60,29 +60,43 @@ export interface TeamMember {
   password: string;
 }
 
-// export interface Task {
-//   id: number
-//   title: string
-//   description: string
-//   assignedTo: TeamMember | null
-//   estimatedHours: number
-//   priority: "low" | "medium" | "high"
-//   status: "not-started" | "in-progress" | "completed"
-//   dueDate: Date | null
-//   goalId: number
-//   goalTitle: string
-// }
+export interface Attachment {
+  filename: string;
+  url: string;
+  uploaded_at: Date;
+}
 
-// export interface Goal {
-//   id: number
-//   title: string
-//   description: string
-//   status: "active" | "completed" | "pending"
-//   createdAt: string
-//   assignedTasks: number
-//   completedTasks: number
-//   tasks?: Task[]
-// }
+export interface Task {
+  _id: string;
+  title: string;
+  description: string;
+  assignedTo: TeamMember | null;
+  estimatedHours: number;
+  priority: "low" | "medium" | "high" | "urgent";
+  status: "pending" | "in_progress" | "completed" | "cancelled";
+  dueDate: Date | null;
+  goalId: string;
+  goalTitle: string;
+}
+
+export interface Goal {
+  _id: string;
+  title: string;
+  description: string;
+  priority: "low" | "medium" | "high" | "urgent";
+  status: "pending" | "in_progress" | "completed" | "cancelled";
+  due_date?: Date;
+  created_by: string;
+  tags: string[];
+  attachments: Attachment[];
+  completed_at?: Date;
+  tasks: string[];
+  createdAt: string;
+  updatedAt: string;
+  assignedTasksCount?: number;
+  completedTasksCount?: number;
+  assigned_to: string;
+}
 
 // Simulate API delay
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
@@ -200,77 +214,56 @@ export const teamApi = {
 }
 
 // Goals API
-// export const goalsApi = {
-//   getGoals: async (): Promise<Goal[]> => {
-//     await delay(500)
-//     const saved = localStorage.getItem("goals")
-//     const mockGoals = [
-//       {
-//         id: 1,
-//         title: "Q4 Product Launch",
-//         description: "Launch the new product line with full marketing campaign and customer onboarding",
-//         status: "active" as const,
-//         createdAt: "2024-01-15",
-//         assignedTasks: 12,
-//         completedTasks: 8,
-//       },
-//       {
-//         id: 2,
-//         title: "Team Expansion",
-//         description: "Hire 5 new engineers and 2 designers for the upcoming projects",
-//         status: "active" as const,
-//         createdAt: "2024-01-10",
-//         assignedTasks: 8,
-//         completedTasks: 3,
-//       },
-//       {
-//         id: 3,
-//         title: "Process Optimization",
-//         description: "Streamline development workflow and implement new project management tools",
-//         status: "completed" as const,
-//         createdAt: "2024-01-05",
-//         assignedTasks: 6,
-//         completedTasks: 6,
-//       },
-//     ]
+export const goalsApi = {
+  
+  getGoals: async (): Promise<Goal[]> => {
+    try {
+      const response = await fetchApi<{ data: { goals: Goal[] } }>(`/goal`)
+      if (!response?.data?.goals) return [];
+      return response.data.goals;
+    } catch (error) {
+      throw error;
+    }
+  },
 
-//     if (saved) {
-//       const savedGoals = JSON.parse(saved)
-//       return [...mockGoals, ...savedGoals]
-//     }
-//     return mockGoals
-//   },
+  getById: async (id: string): Promise<Goal> => {
+    return fetchApi<Goal>(`/goals/${id}`)
+  },
 
-//   createGoal: async (goal: Omit<Goal, "id">): Promise<Goal> => {
-//     await delay(500)
-//     const newGoal = {
-//       ...goal,
-//       id: Date.now(),
-//     }
-//     const goals = await goalsApi.getGoals()
-//     const savedGoals = goals.filter((g) => ![1, 2, 3].includes(g.id))
-//     const updated = [...savedGoals, newGoal]
-//     localStorage.setItem("goals", JSON.stringify(updated))
-//     return newGoal
-//   },
+  createGoal: async (goal: Partial<Goal>): Promise<Goal> => {
+    try {
+      const response = await fetchApi<{ goal: Goal }>('/goal', {
+        method: 'POST',
+        body: JSON.stringify({ goal })
+      });
+      return response.goal;
+    } catch (error) {
+      throw error;
+    }
+  },
 
-//   updateGoal: async (id: number, goal: Partial<Goal>): Promise<Goal> => {
-//     await delay(500)
-//     const goals = await goalsApi.getGoals()
-//     const updated = goals.map((g) => (g.id === id ? { ...g, ...goal } : g))
-//     const savedGoals = updated.filter((g) => ![1, 2, 3].includes(g.id))
-//     localStorage.setItem("goals", JSON.stringify(savedGoals))
-//     return updated.find((g) => g.id === id)!
-//   },
+  updateGoal: async (id: string, goal: Partial<Goal>): Promise<Goal> => {
+    try {
+      return fetchApi<Goal>(`/goal/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(goal),
+      })
+    } catch (error) {
+      throw error;
+    }
+  },
 
-//   deleteGoal: async (id: number): Promise<void> => {
-//     await delay(500)
-//     const goals = await goalsApi.getGoals()
-//     const updated = goals.filter((g) => g.id !== id)
-//     const savedGoals = updated.filter((g) => ![1, 2, 3].includes(g.id))
-//     localStorage.setItem("goals", JSON.stringify(savedGoals))
-//   },
-// }
+  deleteGoal: async (id: string): Promise<void> => {
+    try {
+      return fetchApi<void>(`/goal/${id}`, {
+        method: 'DELETE',
+      })
+    } catch (error) {
+      throw error;
+    }
+  },
+
+}
 
 // Tasks API
 // export const tasksApi = {

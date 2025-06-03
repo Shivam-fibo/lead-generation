@@ -6,6 +6,9 @@ import DashboardLayout from "@/components/dashboard-layout"
 import { LoadingScreen, GoalsSkeleton } from "@/components/loading-screen"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { useToast } from "@/components/ui/use-toast"
+import { useGoalsStore } from "@/stores/goals-store"
+import { goalsApi } from "@/lib/api"
 import { Badge } from "@/components/ui/badge"
 import {
   Dialog,
@@ -34,6 +37,7 @@ import { Plus, Target, Clock, CheckCircle, Edit, Eye, Trash2, Users } from "luci
 
 import { useAuthStore } from "@/stores/auth-store"
 import type { User } from "@/lib/api"
+import { useGoals } from "@/hooks/use-goals"
 
 interface TeamMember {
   id: number
@@ -55,7 +59,7 @@ interface SubTask {
 }
 
 interface Goal {
-  id: number
+  _id: string
   title: string
   description: string
   status: "active" | "completed" | "pending"
@@ -65,7 +69,7 @@ interface Goal {
   tasks?: SubTask[]
 }
 
-const mockGoals: Goal[] = [
+const mockGoals = [
   {
     id: 1,
     title: "Q4 Product Launch",
@@ -131,7 +135,23 @@ const mockGoals: Goal[] = [
 
 export default function GoalsPage() {
   const { user } = useAuthStore()
-  const [goals, setGoals] = useState<Goal[]>(mockGoals)
+  const { toast } = useToast()
+  const router = useRouter()
+
+  const {
+    goals,
+    isLoading,
+    createGoal,
+    updateGoal,
+    deleteGoal,
+    isCreatingGoal,
+    isUpdatingGoal,
+    isDeletingGoal,
+  } = useGoals()
+
+  console.log("goals", goals);
+
+
   const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null)
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null)
   const [editForm, setEditForm] = useState({
@@ -141,38 +161,7 @@ export default function GoalsPage() {
   })
   const [showDetailsDialog, setShowDetailsDialog] = useState(false)
   const [showEditDialog, setShowEditDialog] = useState(false)
-  const [isLoading, setIsLoading] = useState(true)
-  const router = useRouter()
 
-  useEffect(() => {
-    if (!user) {
-      router.push("/")
-      return
-    }
-
-    const userRole = user.roles[0]?.name
-    if (userRole !== "CEO" && userRole !== "Admin") {
-      router.push("/dashboard")
-      return
-    }
-
-    // Simulate loading time
-    setTimeout(() => {
-      // Load goals from localStorage if available
-      const savedGoals = localStorage.getItem("goals")
-      if (savedGoals) {
-        try {
-          const parsedGoals = JSON.parse(savedGoals)
-          if (Array.isArray(parsedGoals) && parsedGoals.length > 0) {
-            setGoals([...mockGoals, ...parsedGoals])
-          }
-        } catch (error) {
-          console.error("Error parsing goals:", error)
-        }
-      }
-      setIsLoading(false)
-    }, 800)
-  }, [router])
 
   const handleViewDetails = (goal: Goal) => {
     setSelectedGoal(goal)
@@ -189,47 +178,47 @@ export default function GoalsPage() {
     setShowEditDialog(true)
   }
 
-  const handleSaveEdit = () => {
+  const handleSaveEdit = async () => {
     if (!editingGoal) return
 
-    const updatedGoals = goals.map((goal) =>
-      goal.id === editingGoal.id
-        ? {
-            ...goal,
-            title: editForm.title,
-            description: editForm.description,
-            status: editForm.status as "active" | "completed" | "pending",
-          }
-        : goal,
-    )
+    try {
+      const updatedGoal = await goalsApi.updateGoal(editingGoal._id, {
+        title: editForm.title,
+        description: editForm.description,
+        status: editForm.status as "pending" | "in_progress" | "completed" | "cancelled",
+      })
 
-    setGoals(updatedGoals)
-
-    // Update localStorage
-    const savedGoals = updatedGoals.filter((goal) => !mockGoals.find((mock) => mock.id === goal.id))
-    localStorage.setItem("goals", JSON.stringify(savedGoals))
-
-    setShowEditDialog(false)
-    setEditingGoal(null)
+      updateGoal(editingGoal._id, updatedGoal)
+      setShowEditDialog(false)
+      setEditingGoal(null)
+      toast({
+        title: "Success",
+        description: "Goal updated successfully",
+      })
+    } catch (error) {
+      console.error("Error updating goal:", error)
+      toast({
+        title: "Error",
+        description: "Failed to update goal. Please try again later.",
+        variant: "destructive",
+      })
+    }
   }
 
-  const handleDelete = (goalId: number) => {
-    const updatedGoals = goals.filter((goal) => goal.id !== goalId)
-    setGoals(updatedGoals)
-
-    // Update localStorage
-    const savedGoals = updatedGoals.filter((goal) => !mockGoals.find((mock) => mock.id === goal.id))
-    localStorage.setItem("goals", JSON.stringify(savedGoals))
+  const handleDelete = async (goalId: string) => {
+    deleteGoal(goalId)
   }
 
   const getStatusIcon = (status: string) => {
     switch (status) {
       case "completed":
         return <CheckCircle className="h-4 w-4 text-green-500" />
-      case "active":
+      case "in_progress":
         return <Target className="h-4 w-4 text-blue-500" />
       case "pending":
         return <Clock className="h-4 w-4 text-yellow-500" />
+      case "cancelled":
+        return <Target className="h-4 w-4 text-red-500" />
       default:
         return <Target className="h-4 w-4 text-gray-500" />
     }
@@ -239,10 +228,12 @@ export default function GoalsPage() {
     switch (status) {
       case "completed":
         return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300"
-      case "active":
+      case "in_progress":
         return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300"
       case "pending":
         return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300"
+      case "cancelled":
+        return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300"
       default:
         return "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300"
     }
@@ -308,7 +299,7 @@ export default function GoalsPage() {
               <CardContent>
                 <div className="text-2xl font-bold">{goals.length}</div>
                 <p className="text-xs text-muted-foreground">
-                  {goals.filter((g) => g.status === "active").length} active
+                  {goals.filter((g) => g.status === "in_progress").length} active
                 </p>
               </CardContent>
             </Card>
@@ -333,17 +324,21 @@ export default function GoalsPage() {
                 <Clock className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{goals.reduce((sum, goal) => sum + goal.assignedTasks, 0)}</div>
+                {/* <div className="text-2xl font-bold">{goals.reduce((sum, goal) => sum + goal.assignedTasks, 0)}</div> */}
+                <div className="text-2xl font-bold">10</div>
                 <p className="text-xs text-muted-foreground">
-                  {goals.reduce((sum, goal) => sum + goal.completedTasks, 0)} completed
+                  0 completed
                 </p>
+                {/* <p className="text-xs text-muted-foreground">
+                  {goals.reduce((sum, goal) => sum + goal.completedTasks, 0)} completed
+                </p> */}
               </CardContent>
             </Card>
           </div>
 
           <div className="space-y-4">
-            {goals.map((goal) => (
-              <Card key={goal.id}>
+            {goals.map((goal, i) => (
+              <Card key={goal._id}>
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
@@ -360,9 +355,10 @@ export default function GoalsPage() {
                       <div className="text-sm text-muted-foreground">
                         Created: {new Date(goal.createdAt).toLocaleDateString()}
                       </div>
-                      <div className="text-sm text-muted-foreground">
+                      {/* <div className="text-sm text-muted-foreground">
                         Tasks: {goal.completedTasks}/{goal.assignedTasks}
-                      </div>
+                        Tasks: 1/2
+                      </div> */}
                     </div>
                     <div className="flex space-x-2">
                       <Button variant="outline" size="sm" onClick={() => handleViewDetails(goal)}>
@@ -390,11 +386,11 @@ export default function GoalsPage() {
                           </AlertDialogHeader>
                           <AlertDialogFooter>
                             <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => handleDelete(goal.id)}>Delete</AlertDialogAction>
+                            <AlertDialogAction onClick={() => handleDelete(goal._id)}>Delete</AlertDialogAction>
                           </AlertDialogFooter>
                         </AlertDialogContent>
                       </AlertDialog>
-                      <Button variant="outline" size="sm" onClick={() => router.push(`/goals/delegate/${goal.id}`)}>
+                      <Button variant="outline" size="sm" onClick={() => router.push(`/goals/delegate/${goal._id}`)}>
                         <Users className="mr-1 h-4 w-4" />
                         Delegate Tasks
                       </Button>
@@ -402,16 +398,22 @@ export default function GoalsPage() {
                   </div>
                   <div className="mt-3">
                     <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                      <div
+                      {/* <div
                         className="bg-blue-600 h-2 rounded-full"
                         style={{
                           width: `${(goal.completedTasks / goal.assignedTasks) * 100}%`,
                         }}
+                      ></div> */}
+                      <div
+                        className="bg-blue-600 h-2 rounded-full"
+                        style={{
+                          width: `${(Math.floor((Math.random() * 10) + 1) / 50) * 100}%`,
+                        }}
                       ></div>
                     </div>
-                    <div className="text-xs text-muted-foreground mt-1">
+                    {/* <div className="text-xs text-muted-foreground mt-1">
                       {Math.round((goal.completedTasks / goal.assignedTasks) * 100)}% complete
-                    </div>
+                    </div> */}
                   </div>
                 </CardContent>
               </Card>
@@ -447,7 +449,8 @@ export default function GoalsPage() {
                       </CardHeader>
                       <CardContent>
                         <div className="text-2xl font-bold">
-                          {Math.round((selectedGoal.completedTasks / selectedGoal.assignedTasks) * 100)}%
+                          {/* {Math.round((selectedGoal.completedTasks / selectedGoal.assignedTasks) * 100)}% */}
+                          {((Math.floor((Math.random() * 10) + 1) / 50) * 100)}%
                         </div>
                         <div className="text-xs text-muted-foreground">
                           {selectedGoal.completedTasks} of {selectedGoal.assignedTasks} tasks
@@ -539,8 +542,9 @@ export default function GoalsPage() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="pending">Pending</SelectItem>
-                      <SelectItem value="active">Active</SelectItem>
+                      <SelectItem value="in_progress">In Progress</SelectItem>
                       <SelectItem value="completed">Completed</SelectItem>
+                      <SelectItem value="cancelled">Cancelled</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
