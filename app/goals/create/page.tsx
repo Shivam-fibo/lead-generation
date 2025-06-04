@@ -13,12 +13,31 @@ import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Upload, Mic, MicOff, FileText, Users, Target } from "lucide-react"
+import { Upload, Mic, MicOff, FileText, Users, Target, Plus, Trash2 } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { FormSkeleton } from "@/components/loading-skeleton"
 import { useToast } from "@/components/ui/use-toast"
 import { useGoals } from "@/hooks/use-goals"
-
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import { useTeamMemberList } from "@/hooks/use-team"
 
 interface User {
   _id: string
@@ -108,15 +127,23 @@ export default function CreateGoal() {
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([])
   const [generatedTasks, setGeneratedTasks] = useState<SubTask[]>([])
   const [isGenerating, setIsGenerating] = useState(false)
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>(defaultTeamMembers)
+  const [showAddTaskDialog, setShowAddTaskDialog] = useState(false)
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [taskToDelete, setTaskToDelete] = useState<number | null>(null)
+  const [showEditDialog, setShowEditDialog] = useState(false)
+  const [taskToEdit, setTaskToEdit] = useState<SubTask | null>(null)
+  const [newTaskForm, setNewTaskForm] = useState<SubTask>({
+    id: 0,
+    title: "",
+    description: "",
+    assignedTo: null,
+    estimatedHours: 8,
+    priority: "medium",
+  })
   const router = useRouter()
   const { toast } = useToast()
-  const {
-    goals,
-    isLoading,
-    createGoal,
-    isCreatingGoal,
-  } = useGoals()
+  const { createGoal, isCreatingGoal } = useGoals()
+  const { members: teamMembers, isLoading: loadingTeamMembers } = useTeamMemberList()
 
 
   // useEffect(() => {
@@ -176,15 +203,14 @@ export default function CreateGoal() {
   const removeFile = (index: number) => {
     setUploadedFiles((prev) => prev.filter((_, i) => i !== index))
   }
-
-  const findTeamMemberBySkill = (skill: string): TeamMember => {
-    const member = teamMembers.find((m) => m.skillTags.some((tag) => tag.toLowerCase().includes(skill.toLowerCase())))
-    return member || teamMembers[0] || defaultTeamMembers[0]
+  const findTeamMemberBySkill = (skill: string): any => {
+    if (!teamMembers) return null;
+    return teamMembers.find((m) => m.roles.some((role) => role.name.toLowerCase().includes(skill.toLowerCase()))) || null;
   }
 
-  const findTeamMemberByRole = (role: string): TeamMember => {
-    const member = teamMembers.find((m) => m.role.toLowerCase().includes(role.toLowerCase()))
-    return member || teamMembers[0] || defaultTeamMembers[0]
+  const findTeamMemberByRole = (role: string): any => {
+    if (!teamMembers) return null;
+    return teamMembers.find((m) => m.roles[0].name.toLowerCase().includes(role.toLowerCase())) || null;
   }
 
   const generateTasks = async () => {
@@ -248,7 +274,6 @@ export default function CreateGoal() {
     console.log('checking submit')
     const now = "date"
     const newGoal = {
-      _id: "",
       title: goalTitle,
       description: goalDescription,
       priority: "medium" as const,
@@ -260,15 +285,51 @@ export default function CreateGoal() {
         url: URL.createObjectURL(file),
         uploaded_at: new Date()
       })),
-      // tasks: generatedTasks.map(task => task.title),
-      due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+      tasks: generatedTasks.map(task => task),
+      due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), 
       createdAt: now,
       updatedAt: now,
       assignedTasksCount: generatedTasks.length,
       completedTasksCount: 0
     }
-    createGoal(newGoal)    
+
+    console.log("newGoal", newGoal);
+    
+    createGoal(newGoal)
     router.push("/goals")
+  }
+
+  const handleAddNewTask = () => {
+    const newTask = {
+      ...newTaskForm,
+      id: generatedTasks.length + 1,
+    }
+    setGeneratedTasks((prev) => [...prev, newTask])
+    setNewTaskForm({
+      id: 0,
+      title: "",
+      description: "",
+      assignedTo: null,
+      estimatedHours: 8,
+      priority: "medium",
+    })
+    setShowAddTaskDialog(false)
+  }
+
+  const handleEditTask = () => {
+    if (!taskToEdit) return
+    setGeneratedTasks(prev =>
+      prev.map(task => task.id === taskToEdit.id ? { ...taskToEdit } : task)
+    )
+    setTaskToEdit(null)
+    setShowEditDialog(false)
+  }
+
+  const handleDeleteTask = () => {
+    if (taskToDelete === null) return
+    setGeneratedTasks(prev => prev.filter(task => task.id !== taskToDelete))
+    setTaskToDelete(null)
+    setShowDeleteDialog(false)
   }
 
   const getPriorityColor = (priority: string) => {
@@ -295,6 +356,8 @@ export default function CreateGoal() {
   //     return null
   //   }
 
+  const openEditDialog = showEditDialog && taskToEdit ? true : false;
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -303,15 +366,23 @@ export default function CreateGoal() {
           <p className="text-muted-foreground">
             Define a high-level goal and let AI break it down into actionable tasks
           </p>
-        </div>
-
-        <Tabs defaultValue="input" className="space-y-6">
-          <TabsList>
-            <TabsTrigger value="input">Goal Input</TabsTrigger>
-            <TabsTrigger value="tasks" disabled={generatedTasks.length === 0}>
-              Generated Tasks ({generatedTasks.length})
-            </TabsTrigger>
-          </TabsList>
+        </div>        <Tabs defaultValue="input" className="space-y-6">
+          <div className="flex items-center justify-between mb-6">
+            <TabsList>
+              <TabsTrigger value="input">Goal Input</TabsTrigger>
+              <TabsTrigger value="tasks" disabled={generatedTasks.length === 0}>
+                Generated Tasks ({generatedTasks.length})
+              </TabsTrigger>
+            </TabsList>
+            {generatedTasks.length > 0 && (
+              <Button
+                onClick={() => setShowAddTaskDialog(true)}
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Add New Task
+              </Button>
+            )}
+          </div>
 
           <TabsContent value="input" className="space-y-6">
             <Card>
@@ -454,16 +525,46 @@ export default function CreateGoal() {
               </CardHeader>
               <CardContent className="space-y-4">
                 {generatedTasks.map((task) => (
-                  <div key={task.id} className="border rounded-lg p-4 space-y-3">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <h4 className="font-medium">{task.title}</h4>
-                        <p className="text-sm text-muted-foreground mt-1">{task.description}</p>
-                      </div>
-                      <Badge className={getPriorityColor(task.priority)}>{task.priority}</Badge>
+                  <div key={task.id} className="border rounded-lg p-4 space-y-3">                    <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <h4 className="font-medium">{task.title}</h4>
+                      <p className="text-sm text-muted-foreground mt-1">{task.description}</p>
                     </div>
+                    <div className="flex items-center gap-2">
+                      <Badge className={getPriorityColor(task.priority)}>{task.priority}</Badge>
+                      <Button variant="ghost" size="icon" onClick={() => {
+                        setTaskToEdit(task)
+                        setShowEditDialog(true)
+                      }}>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3Z" /></svg>
+                      </Button>                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="ghost" size="icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /></svg>
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              This action cannot be undone. This will permanently delete this task.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleDeleteTask(task.id)}
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            >
+                              Delete
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="flex items-center space-x-4 text-sm">
                         <Users className="h-4 w-4 text-muted-foreground" />
                         <div className="text-muted-foreground">Est. {task.estimatedHours}h</div>
@@ -479,43 +580,49 @@ export default function CreateGoal() {
                             </Badge>
                           )}
                       </div>
-                    </div>
+                    </div> */}
 
                     <div className="space-y-2">
-                      <Label>Assign to Team Member</Label>
+                      <Label>Assign to</Label>
                       <Select
-                        value={task.assignedTo?.id.toString() || ""}
+                        value={task.assignedTo?._id || ""}
                         onValueChange={(value) => {
-                          const member = teamMembers.find((m) => m.id.toString() === value) || null
+                          const member = teamMembers?.find((m) => m._id === value) || null;
                           setGeneratedTasks((prev) =>
-                            prev.map((t) => (t.id === task.id ? { ...t, assignedTo: member } : t)),
-                          )
+                            prev.map((t) => (t.id === task.id ? { ...t, assignedTo: member } : t))
+                          );
                         }}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Select team member" />
+                          <SelectValue placeholder="Select team member">
+                            {task.assignedTo ? task.assignedTo.first_name : "Select team member"}
+                          </SelectValue>
                         </SelectTrigger>
                         <SelectContent>
-                          {teamMembers.map((member) => (
-                            <SelectItem key={member.id} value={member.id.toString()}>
-                              <div className="flex items-center space-x-2">
-                                <span>{member.name}</span>
-                                <Badge variant="outline" className="text-xs">
-                                  {member.role}
-                                </Badge>
-                              </div>
-                            </SelectItem>
-                          ))}
+                          {loadingTeamMembers ? (
+                            <div className="p-2 text-center text-sm text-muted-foreground">
+                              Loading team members...
+                            </div>
+                          ) : !teamMembers?.length ? (
+                            <div className="p-2 text-center text-sm text-muted-foreground">
+                              No team members found
+                            </div>
+                          ) : (
+                            teamMembers.map((member) => (
+                              <SelectItem key={member._id} value={member._id}>
+                                <div className="flex items-center space-x-2">
+                                  <span>{member.first_name}</span>
+                                  <Badge variant="outline" className="text-xs">
+                                    {member.roles[0].name}
+                                  </Badge>
+                                </div>
+                              </SelectItem>
+                            ))
+                          )}
                         </SelectContent>
                       </Select>
-                      {task.assignedTo && (
-                        <div className="text-xs text-muted-foreground">
-                          Skills: {task.assignedTo.skillTags.slice(0, 3).join(", ")}
-                        </div>
-                      )}
                     </div>
-                  </div>
-                ))}
+                  </div>))}
 
                 <div className="border-t pt-4">
                   <div className="flex justify-between items-center">
@@ -534,7 +641,220 @@ export default function CreateGoal() {
             </Card>
           </TabsContent>
         </Tabs>
-      </div>
+
+        {/* Add Task Dialog */}
+
+
+        <Dialog open={showAddTaskDialog} onOpenChange={setShowAddTaskDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Add New Task</DialogTitle>
+              <DialogDescription>Create a new task for this goal.</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="new-task-title">Task Title</Label>
+                <Input
+                  id="new-task-title"
+                  placeholder="Enter task title"
+                  value={newTaskForm.title}
+                  onChange={(e) => setNewTaskForm({ ...newTaskForm, title: e.target.value })}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="new-task-description">Task Description</Label>
+                <Textarea
+                  id="new-task-description"
+                  placeholder="Describe the task in detail"
+                  value={newTaskForm.description}
+                  onChange={(e) => setNewTaskForm({ ...newTaskForm, description: e.target.value })}
+                  rows={3}
+                />
+              </div>
+
+              <div className="grid grid-cols-1">
+                <div className="space-y-2">
+                  <Label>Assign To</Label>
+                  <Select
+                    value={newTaskForm.assignedTo?._id || ""}
+                    onValueChange={(value) => {
+                      const member = teamMembers?.find((m) => m._id === value) || null;
+                      setNewTaskForm((prev) => ({ ...prev, assignedTo: member }))
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select team member">
+                        {newTaskForm.assignedTo ? newTaskForm.assignedTo.first_name : "Select team member"}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      {loadingTeamMembers ? (
+                        <div className="p-2 text-center text-sm text-muted-foreground">
+                          Loading team members...
+                        </div>
+                      ) : !teamMembers?.length ? (
+                        <div className="p-2 text-center text-sm text-muted-foreground">
+                          No team members found
+                        </div>
+                      ) : (
+                        teamMembers.map((member) => (
+                          <SelectItem key={member._id} value={member._id}>
+                            <div className="flex items-center space-x-2">
+                              <span>{member.first_name}</span>
+                              <Badge variant="outline" className="text-xs">
+                                {member.roles[0].name}
+                              </Badge>
+                            </div>
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* <div className="space-y-2">
+                  <Label htmlFor="new-task-estimated-hours">Estimated Hours</Label>
+                  <Input
+                    id="new-task-estimated-hours"
+                    type="number"
+                    placeholder="e.g. 8"
+                    value={newTaskForm.estimatedHours}
+                    onChange={(e) => setNewTaskForm({ ...newTaskForm, estimatedHours: Number(e.target.value) })}
+                  />
+                </div> */}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="new-task-priority">Priority</Label>
+                <Select
+                  id="new-task-priority"
+                  value={newTaskForm.priority}
+                  onValueChange={(value) => setNewTaskForm({ ...newTaskForm, priority: value as "low" | "medium" | "high" })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select priority" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="low">Low</SelectItem>
+                    <SelectItem value="medium">Medium</SelectItem>
+                    <SelectItem value="high">High</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowAddTaskDialog(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleAddNewTask}>
+                Add Task
+              </Button>
+            </DialogFooter>
+
+          </DialogContent>
+        </Dialog>
+
+
+
+        {taskToEdit && <Dialog open={openEditDialog} onOpenChange={setShowEditDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Edit Task</DialogTitle>
+              <DialogDescription>Update the task information.</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Task Title</Label>
+                <Input
+                  placeholder="Enter task title"
+                  value={taskToEdit.title}
+                  onChange={(e) => setTaskToEdit({ ...taskToEdit, title: e.target.value })}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Task Description</Label>
+                <Textarea
+                  placeholder="Describe the task in detail"
+                  value={taskToEdit.description}
+                  onChange={(e) => setTaskToEdit({ ...taskToEdit, description: e.target.value })}
+                  rows={3}
+                />
+              </div>
+
+              <div className="grid grid-cols-1">
+                <div className="space-y-2">
+                  <Label>Assign To</Label>
+                  <Select
+                    value={taskToEdit.assignedTo?._id || ""}
+                    onValueChange={(value) => {
+                      const member = teamMembers?.find((m) => m._id === value) || null;
+                      setTaskToEdit({ ...taskToEdit, assignedTo: member });
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select team member">
+                        {taskToEdit.assignedTo ? taskToEdit.assignedTo.first_name : "Select team member"}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      {loadingTeamMembers ? (
+                        <div className="p-2 text-center text-sm text-muted-foreground">
+                          Loading team members...
+                        </div>
+                      ) : !teamMembers?.length ? (
+                        <div className="p-2 text-center text-sm text-muted-foreground">
+                          No team members found
+                        </div>
+                      ) : (
+                        teamMembers.map((member) => (
+                          <SelectItem key={member._id} value={member._id}>
+                            <div className="flex items-center space-x-2">
+                              <span>{member.first_name}</span>
+                              <Badge variant="outline" className="text-xs">
+                                {member.roles[0].name}
+                              </Badge>
+                            </div>
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Priority</Label>
+                <Select
+                  value={taskToEdit.priority}
+                  onValueChange={(value) => setTaskToEdit({ ...taskToEdit, priority: value as "low" | "medium" | "high" })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select priority" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="low">Low</SelectItem>
+                    <SelectItem value="medium">Medium</SelectItem>
+                    <SelectItem value="high">High</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => {
+                setTaskToEdit(null)
+                setShowEditDialog(false)
+              }}>
+                Cancel
+              </Button>
+              <Button onClick={handleEditTask}>
+                Save Changes
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>}      </div>
     </DashboardLayout>
   )
 }

@@ -4,7 +4,28 @@ import React from "react"
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useTeamStore } from "@/stores/team-store"
-import { teamApi, type TeamMember } from "@/lib/api"
+import { teamApi, type TeamMember, type TeamMemberPublic } from "@/lib/api"
+
+export const useTeamMemberList = () => {
+  const {
+    data,
+    isLoading,
+    isError,
+    error,
+    isSuccess,
+  } = useQuery({
+    queryKey: ["teamMemberList"],
+    queryFn: teamApi.getMemberListPublic,
+    staleTime: 5 * 60 * 1000,
+  })
+  return {
+    members: data || [],
+    isLoading,
+    isError,
+    error,
+    isSuccess,
+  }
+}
 
 export function useTeam() {
   const { members, setMembers, addMember, updateMember, removeMember } = useTeamStore()
@@ -13,7 +34,7 @@ export function useTeam() {
   const { data: teamMembers, isLoading } = useQuery({
     queryKey: ["teamMembers"],
     queryFn: teamApi.getTeamMembers,
-    staleTime: 5 * 60 * 1000, 
+    staleTime: 5 * 60 * 1000,
   })
 
   const addMemberMutation = useMutation({

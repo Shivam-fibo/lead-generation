@@ -59,6 +59,13 @@ export interface TeamMember {
   roles: Role[];
   password: string;
 }
+export interface TeamMemberPublic {
+  _id: string;
+  username: string;
+  first_name: string;
+  last_name: string;
+  roles: Role[];
+}
 
 export interface Attachment {
   filename: string;
@@ -70,14 +77,22 @@ export interface Task {
   _id: string;
   title: string;
   description: string;
-  assignedTo: TeamMember | null;
-  estimatedHours: number;
   priority: "low" | "medium" | "high" | "urgent";
   status: "pending" | "in_progress" | "completed" | "cancelled";
   dueDate: Date | null;
-  goalId: string;
-  goalTitle: string;
+  completed_at: Date;
 }
+
+export interface TaskAssign {
+  task_id: string;
+  assigned_to: string;
+}
+
+// export interface TaskAssign {
+//   _id: string;
+//   title: string;
+//   role: string;
+// }
 
 export interface Goal {
   _id: string;
@@ -90,7 +105,7 @@ export interface Goal {
   tags: string[];
   attachments: Attachment[];
   completed_at?: Date;
-  tasks: string[];
+  tasks: any[];
   createdAt: string;
   updatedAt: string;
   assignedTasksCount?: number;
@@ -167,6 +182,16 @@ export const teamApi = {
     }
   },
 
+  getMemberListPublic: async (): Promise<TeamMemberPublic[]> => {
+    try {
+      const response = await fetchApi<{ users: TeamMemberPublic[] }>(`/user-list`)
+      if (!response) return [];
+      return response.users
+    } catch (error) {
+      throw error;
+    }
+  },
+
   addTeamMember: async (member: Omit<TeamMember, "_id">): Promise<TeamMember> => {
     try {
       const response = await fetchApi<{ user: TeamMember }>('/register', {
@@ -215,7 +240,7 @@ export const teamApi = {
 
 // Goals API
 export const goalsApi = {
-  
+
   getGoals: async (): Promise<Goal[]> => {
     try {
       const response = await fetchApi<{ data: { goals: Goal[] } }>(`/goal`)
@@ -226,8 +251,14 @@ export const goalsApi = {
     }
   },
 
-  getById: async (id: string): Promise<Goal> => {
-    return fetchApi<Goal>(`/goals/${id}`)
+  getGoalsById: async (id: string): Promise<Goal | null> => {
+    try {
+      const response = await fetchApi<{ data: { goals: Goal[] } }>(`/goal/?id=${id}`)
+      if (!response?.data?.goals[0]) return null;
+      return response?.data?.goals[0];
+    } catch (error) {
+      throw error;
+    }
   },
 
   createGoal: async (goal: Partial<Goal>): Promise<Goal> => {
@@ -266,42 +297,91 @@ export const goalsApi = {
 }
 
 // Tasks API
-// export const tasksApi = {
-//   getTasks: async (): Promise<Task[]> => {
-//     await delay(500)
-//     const saved = localStorage.getItem("allTasks") || "[]"
-//     const tasks = JSON.parse(saved)
-//     return tasks.map((task: any) => ({
-//       ...task,
-//       dueDate: task.dueDate ? new Date(task.dueDate) : null,
-//     }))
-//   },
+export const tasksApi = {
 
-//   getTasksByUser: async (userId: number): Promise<Task[]> => {
-//     const tasks = await tasksApi.getTasks()
-//     return tasks.filter((task) => task.assignedTo?.id === userId)
-//   },
+  // getTasks: async (): Promise<Task[]> => {
+  //   await delay(500)
+  //   const saved = localStorage.getItem("allTasks") || "[]"
+  //   const tasks = JSON.parse(saved)
+  //   return tasks.map((task: any) => ({
+  //     ...task,
+  //     dueDate: task.dueDate ? new Date(task.dueDate) : null,
+  //   }))
+  // },
 
-//   getTasksByGoal: async (goalId: number): Promise<Task[]> => {
-//     const tasks = await tasksApi.getTasks()
-//     return tasks.filter((task) => task.goalId === goalId)
-//   },
+  taskAssign: async (taskAssign: Partial<TaskAssign>): Promise<TaskAssign> => {
+    try {
+       const response = await fetchApi<{ taskAssign: TaskAssign }>('/assign-task', {
+        method: 'PUT',
+        body: JSON.stringify(taskAssign)
+      });
 
-//   updateTaskStatus: async (taskId: number, status: Task["status"]): Promise<Task> => {
-//     await delay(300)
-//     const tasks = await tasksApi.getTasks()
-//     const updated = tasks.map((task) => (task.id === taskId ? { ...task, status } : task))
-//     localStorage.setItem("allTasks", JSON.stringify(updated))
-//     return updated.find((task) => task.id === taskId)!
-//   },
+      // if (!response) return [];
+      return response
+    } catch (error) {
+      throw error;
+    }
+  },
 
-//   saveTasks: async (tasks: Task[]): Promise<Task[]> => {
-//     await delay(500)
-//     const tasksToSave = tasks.map((task) => ({
-//       ...task,
-//       dueDate: task.dueDate ? task.dueDate.toISOString() : null,
-//     }))
-//     localStorage.setItem("allTasks", JSON.stringify(tasksToSave))
-//     return tasks
-//   },
-// }
+  createTask: async (task: Partial<Task>): Promise<Task> => {
+    try {
+      const response = await fetchApi<{ task: Task }>('/task', {
+        method: 'POST',
+        body: JSON.stringify({ task })
+      });
+      return response.task;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  updateTask: async (taskId: string, task: Partial<Task>): Promise<Task> => {
+    try {
+      const response = await fetchApi<{ task: Task }>(`/task/${taskId}`, {
+        method: 'PUT',
+        body: JSON.stringify({ task }),
+      });
+      return response.task;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  deleteTask: async (taskId: string): Promise<void> => {
+    try {
+      await fetchApi<void>(`/task/${taskId}`, {
+        method: 'DELETE'
+      });
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  //   getTasksByUser: async (userId: number): Promise<Task[]> => {
+  //     const tasks = await tasksApi.getTasks()
+  //     return tasks.filter((task) => task.assignedTo?.id === userId)
+  //   },
+
+  //   getTasksByGoal: async (goalId: number): Promise<Task[]> => {
+  //     const tasks = await tasksApi.getTasks()
+  //     return tasks.filter((task) => task.goalId === goalId)
+  //   },
+
+  //   updateTaskStatus: async (taskId: number, status: Task["status"]): Promise<Task> => {
+  //     await delay(300)
+  //     const tasks = await tasksApi.getTasks()
+  //     const updated = tasks.map((task) => (task.id === taskId ? { ...task, status } : task))
+  //     localStorage.setItem("allTasks", JSON.stringify(updated))
+  //     return updated.find((task) => task.id === taskId)!
+  //   },
+
+  //   saveTasks: async (tasks: Task[]): Promise<Task[]> => {
+  //     await delay(500)
+  //     const tasksToSave = tasks.map((task) => ({
+  //       ...task,
+  //       dueDate: task.dueDate ? task.dueDate.toISOString() : null,
+  //     }))
+  //     localStorage.setItem("allTasks", JSON.stringify(tasksToSave))
+  //     return tasks
+  //   },
+}

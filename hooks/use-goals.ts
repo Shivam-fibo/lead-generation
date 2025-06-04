@@ -1,10 +1,38 @@
 "use client"
 
 import React from "react"
-
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { useQuery, useMutation, useQueryClient, UseQueryOptions } from "@tanstack/react-query"
 import { useGoalsStore } from "@/stores/goals-store"
 import { goalsApi, type Goal } from "@/lib/api"
+
+
+export const useGoal = (id: string, options?: Partial<UseQueryOptions<Goal, Error>>) => {
+  const {
+    data,
+    isLoading,
+    isError,
+    error,
+    isSuccess,
+    isFetched,
+    isRefetching 
+  } = useQuery({
+    queryKey: ["goalWithId", id],
+    queryFn: () => goalsApi.getGoalsById(id),
+    enabled: !!id,
+    staleTime: 5 * 60 * 1000,
+    ...options,
+  })
+
+  return {
+    data,
+    isLoading,
+    isError,
+    error,
+    isSuccess,
+    isFetched,
+    isRefetching
+  }
+}
 
 export function useGoals() {
   const { goals, setGoals, addGoal, updateGoal, removeGoal } = useGoalsStore()
@@ -13,13 +41,13 @@ export function useGoals() {
   const { data: goalsData, isLoading } = useQuery({
     queryKey: ["goal"],
     queryFn: goalsApi.getGoals,
-    staleTime: 5 * 60 * 1000, 
+    staleTime: 5 * 60 * 1000,
   })
 
   const createGoalMutation = useMutation({
-    mutationFn: (goal: Omit<Goal, "id">) => goalsApi.createGoal(goal),
+    mutationFn: (goal: Partial<Goal>) => goalsApi.createGoal(goal),
     onSuccess: (newGoal) => {
-      addGoal(newGoal)
+      // addGoal(newGoal)
       queryClient.invalidateQueries({ queryKey: ["goal"] })
     },
   })
@@ -56,5 +84,6 @@ export function useGoals() {
     isCreatingGoal: createGoalMutation.isPending,
     isUpdatingGoal: updateGoalMutation.isPending,
     isDeletingGoal: deleteGoalMutation.isPending,
+    // useGoal,
   }
 }

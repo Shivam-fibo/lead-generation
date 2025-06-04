@@ -33,7 +33,11 @@ import {
 } from "@/components/ui/alert-dialog"
 import { format } from "date-fns"
 import { CalendarIcon, Target, Save, Shuffle, Plus, Edit, Trash2 } from "lucide-react"
-
+import { useGoal, useGoals } from "@/hooks/use-goals"
+import { GoalsSkeleton, LoadingScreen } from "@/components/loading-screen"
+import { useTasks } from "@/hooks/use-tasks"
+import { useTeamMemberList } from "@/hooks/use-team"
+import { useQueryClient } from "@tanstack/react-query"
 interface User {
   id: number
   role: string
@@ -73,14 +77,15 @@ interface TaskFormData {
   description: string
   estimatedHours: number
   priority: "low" | "medium" | "high"
+  assignedTo: string
 }
 
 const defaultTeamMembers: TeamMember[] = [
   {
     id: 1,
     name: "John Smith",
-    email: "john.smith@company.com",
     role: "CEO",
+    email: "john.smith@company.com",
     skillTags: ["Leadership", "Strategy", "Vision"],
     department: "Executive",
   },
@@ -128,182 +133,82 @@ const defaultTeamMembers: TeamMember[] = [
 
 export default function TaskDelegation() {
   const [user, setUser] = useState<User | null>(null)
-  const [goal, setGoal] = useState<Goal | null>(null)
-  const [tasks, setTasks] = useState<SubTask[]>([])
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>(defaultTeamMembers)
-  const [isLoading, setIsLoading] = useState(true)
+  // const [goal, setGoal] = useState<Goal | null>(null)
+  const [tasks, setTasks] = useState<any[]>([])
   const [showAddDialog, setShowAddDialog] = useState(false)
   const [showEditDialog, setShowEditDialog] = useState(false)
-  const [editingTask, setEditingTask] = useState<SubTask | null>(null)
+  const [editingTask, setEditingTask] = useState<any>(null)
   const [taskForm, setTaskForm] = useState<TaskFormData>({
     title: "",
     description: "",
     estimatedHours: 8,
     priority: "medium",
+    assignedTo: "",
   })
   const router = useRouter()
   const params = useParams()
   const goalId = params.id as string
+  const queryClient = useQueryClient()
+
+  const {
+    data: goal,
+    isLoading: isGoalLoading,
+    error: goalError,
+    isSuccess,
+    isFetched,
+    isRefetching
+  } = useGoal(goalId || "")
+  const {
+    isLoading: isTaskLoading,
+    isError: taskError,
+    isSuccess: taskSuccess,
+    createTask,
+    updateTask,
+    assignTask,
+    deleteTask
+  } = useTasks()
+
+  const {
+    members: teamMembers,
+    isLoading: loadingTeamMembers,
+    isError: errorTeamMembers,
+    isSuccess: successTeamMembers
+  } = useTeamMemberList()
 
   useEffect(() => {
-    // const currentUser = localStorage.getItem("currentUser")
-    // if (!currentUser) {
-    //   router.push("/")
-    //   return
-    // }
+    if (goal && goal?.tasks) {
+      setTasks(goal.tasks)
+    }
+  }, [goal, isFetched, isRefetching])
 
-    // const userData = JSON.parse(currentUser)
-    // setUser(userData)
+  // useEffect(() => {
+  // Check authentication - commented out for now
+  // const currentUser = localStorage.getItem("currentUser")
+  // if (!currentUser) {
+  //   router.push("/")
+  //   return
+  // }
 
-    // if (userData.role !== "CEO" && userData.role !== "Admin" && userData.role !== "Team Leader") {
-    //   router.push("/dashboard")
-    //   return
-    // }
+  // const userData = JSON.parse(currentUser)
+  // setUser(userData)
 
-    // Load team members
-    const savedTeamMembers = localStorage.getItem("teamMembers")
-    if (savedTeamMembers) {
-      try {
-        const parsedMembers = JSON.parse(savedTeamMembers)
-        if (Array.isArray(parsedMembers) && parsedMembers.length > 0) {
-          setTeamMembers(parsedMembers)
+  // if (userData.role !== "CEO" && userData.role !== "Admin" && userData.role !== "Team Leader") {
+  //   router.push("/dashboard")
+  //   return
+  // }
+  // }, [])
+
+  const updateTaskAssignment = (taskId: string, memberId: string) => {
+    assignTask(
+      { task_id: taskId, assigned_to: memberId },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({
+            queryKey: ["goalWithId", goalId]
+          })
         }
-      } catch (error) {
-        console.error("Error parsing team members:", error)
       }
-    }
-
-    // Load goal and generate tasks
-    loadGoalAndTasks()
-    setIsLoading(false)
-  }, [router, goalId])``
-
-  const loadGoalAndTasks = () => {
-    // Check if tasks already exist for this goal
-    const savedTasks = localStorage.getItem("allTasks") || "[]"
-    const allTasks = JSON.parse(savedTasks)
-    const existingTasks = allTasks.filter((task: any) => task.goalId === Number.parseInt(goalId))
-
-    // Mock goal data - in real app, this would come from API
-    const mockGoal: Goal = {
-      id: Number.parseInt(goalId),
-      title: "Customer Onboarding System",
-      description: "Implement new customer onboarding system with automated email sequences and user training modules",
-      status: "active",
-    }
-
-    if (existingTasks.length > 0) {
-      // Load existing tasks
-      const tasksWithDates = existingTasks.map((task: any) => ({
-        ...task,
-        dueDate: task.dueDate ? new Date(task.dueDate) : null,
-      }))
-      setTasks(tasksWithDates)
-    } else {
-      // Generate dummy subtasks
-      const generatedTasks: SubTask[] = [
-        {
-          id: Date.now() + 1,
-          title: "Design User Interface",
-          description:
-            "Create wireframes and mockups for the onboarding flow including welcome screens, progress indicators, and completion pages",
-          assignedTo: null,
-          estimatedHours: 16,
-          priority: "high",
-          status: "not-started",
-          dueDate: null,
-        },
-        {
-          id: Date.now() + 2,
-          title: "Develop Backend API",
-          description: "Build REST API endpoints for user registration, email automation, and progress tracking",
-          assignedTo: null,
-          estimatedHours: 24,
-          priority: "high",
-          status: "not-started",
-          dueDate: null,
-        },
-        {
-          id: Date.now() + 3,
-          title: "Frontend Implementation",
-          description: "Implement the onboarding UI components using React and integrate with backend APIs",
-          assignedTo: null,
-          estimatedHours: 20,
-          priority: "medium",
-          status: "not-started",
-          dueDate: null,
-        },
-        {
-          id: Date.now() + 4,
-          title: "Email Template Creation",
-          description: "Design and code responsive email templates for the automated sequence",
-          assignedTo: null,
-          estimatedHours: 12,
-          priority: "medium",
-          status: "not-started",
-          dueDate: null,
-        },
-        {
-          id: Date.now() + 5,
-          title: "Testing & QA",
-          description:
-            "Comprehensive testing of the onboarding system including unit tests and user acceptance testing",
-          assignedTo: null,
-          estimatedHours: 16,
-          priority: "low",
-          status: "not-started",
-          dueDate: null,
-        },
-        {
-          id: Date.now() + 6,
-          title: "Documentation",
-          description: "Create user documentation and admin guides for the onboarding system",
-          assignedTo: null,
-          estimatedHours: 8,
-          priority: "low",
-          status: "not-started",
-          dueDate: null,
-        },
-      ]
-      setTasks(generatedTasks)
-    }
-
-    setGoal(mockGoal)
-  }
-
-  const autoAssignTasks = () => {
-    const updatedTasks = tasks.map((task) => {
-      let assignedMember: TeamMember | null = null
-
-      // Auto-assignment logic based on task title and team member skills
-      if (task.title.toLowerCase().includes("design") || task.title.toLowerCase().includes("ui")) {
-        assignedMember =
-          teamMembers.find((m) => m.skillTags.some((skill) => skill.toLowerCase().includes("design"))) || null
-      } else if (task.title.toLowerCase().includes("backend") || task.title.toLowerCase().includes("api")) {
-        assignedMember =
-          teamMembers.find((m) => m.skillTags.some((skill) => skill.toLowerCase().includes("backend"))) || null
-      } else if (task.title.toLowerCase().includes("frontend")) {
-        assignedMember =
-          teamMembers.find((m) => m.skillTags.some((skill) => skill.toLowerCase().includes("frontend"))) || null
-      } else if (task.title.toLowerCase().includes("testing") || task.title.toLowerCase().includes("qa")) {
-        assignedMember = teamMembers.find((m) => m.role === "Team Leader") || null
-      } else {
-        // Default assignment to available team members
-        assignedMember = teamMembers.find((m) => m.role === "Team Member") || null
-      }
-
-      return {
-        ...task,
-        assignedTo: assignedMember,
-      }
-    })
-
-    setTasks(updatedTasks)
-  }
-
-  const updateTaskAssignment = (taskId: number, memberId: string) => {
-    const member = teamMembers.find((m) => m.id.toString() === memberId) || null
-    setTasks((prev) => prev.map((task) => (task.id === taskId ? { ...task, assignedTo: member } : task)))
+    )
   }
 
   const updateTaskDueDate = (taskId: number, date: Date | null) => {
@@ -315,43 +220,53 @@ export default function TaskDelegation() {
   }
 
   const handleAddTask = () => {
-    const newTask: SubTask = {
-      id: Date.now(),
+    const newTask = {
       title: taskForm.title,
       description: taskForm.description,
-      assignedTo: null,
-      estimatedHours: taskForm.estimatedHours,
       priority: taskForm.priority,
-      status: "not-started",
-      dueDate: null,
+      assigned_to: taskForm.assignedTo,
+      goalId
     }
-
     setTasks((prev) => [...prev, newTask])
+    createTask(
+      newTask,
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({
+            queryKey: ["goalWithId", goalId]
+          })
+        }
+      }
+    )
     setTaskForm({
       title: "",
       description: "",
       estimatedHours: 8,
       priority: "medium",
+      assignedTo: "",
     })
     setShowAddDialog(false)
   }
-
   const handleEditTask = () => {
     if (!editingTask) return
 
-    setTasks((prev) =>
-      prev.map((task) =>
-        task.id === editingTask.id
-          ? {
-              ...task,
-              title: taskForm.title,
-              description: taskForm.description,
-              estimatedHours: taskForm.estimatedHours,
-              priority: taskForm.priority,
-            }
-          : task,
-      ),
-    )
+    const updatedTask = {
+      title: taskForm.title,
+      description: taskForm.description,
+      priority: taskForm.priority,
+      assignedTo: taskForm.assignedTo
+    }
+
+    updateTask({
+      taskId: editingTask._id,
+      task: updatedTask
+    }, {
+      onSuccess: () => {
+        queryClient.invalidateQueries({
+          queryKey: ["goalWithId", goalId]
+        })
+      }
+    })
 
     setEditingTask(null)
     setTaskForm({
@@ -359,42 +274,31 @@ export default function TaskDelegation() {
       description: "",
       estimatedHours: 8,
       priority: "medium",
+      assignedTo: "",
     })
     setShowEditDialog(false)
   }
-
-  const handleDeleteTask = (taskId: number) => {
-    setTasks((prev) => prev.filter((task) => task.id !== taskId))
+  const handleDeleteTask = (taskId: string) => {
+    deleteTask(taskId, {
+      onSuccess: () => {
+        setTasks((prev) => prev.filter((task) => task._id !== taskId))
+        queryClient.invalidateQueries({
+          queryKey: ["goalWithId", goalId]
+        })
+      }
+    })
   }
 
-  const openEditDialog = (task: SubTask) => {
+  const openEditDialog = (task: any) => {
     setEditingTask(task)
     setTaskForm({
       title: task.title,
       description: task.description,
       estimatedHours: task.estimatedHours,
       priority: task.priority,
+      assignedTo: task.assignment?.assigned_to?._id || "",
     })
     setShowEditDialog(true)
-  }
-
-  const saveDelegation = () => {
-    // Save tasks to localStorage
-    const savedTasks = localStorage.getItem("allTasks") || "[]"
-    const allTasks = JSON.parse(savedTasks)
-
-    // Add goal ID to each task
-    const tasksWithGoalId = tasks.map((task) => ({
-      ...task,
-      goalId: Number.parseInt(goalId),
-      goalTitle: goal?.title,
-    }))
-
-    // Update or add tasks
-    const updatedTasks = [...allTasks.filter((t: any) => t.goalId !== Number.parseInt(goalId)), ...tasksWithGoalId]
-    localStorage.setItem("allTasks", JSON.stringify(updatedTasks))
-
-    router.push("/goals")
   }
 
   const getPriorityColor = (priority: string) => {
@@ -410,328 +314,402 @@ export default function TaskDelegation() {
     }
   }
 
-  // if (isLoading) {
-  //   return (
-  //     <DashboardLayout>
-  //       <div className="flex items-center justify-center h-64">
-  //         <div className="text-lg">Loading...</div>
-  //       </div>
-  //     </DashboardLayout>
-  //   )
-  // }
-
-  // if (!user || !goal) {
-  //   return null
+  // if (!user) {
+  //   return <LoadingScreen />
   // }
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold">Task Delegation</h1>
-            <p className="text-muted-foreground">Assign tasks for: {goal.title}</p>
-          </div>
-          <div className="flex space-x-2">
-            <Button variant="outline" onClick={() => setShowAddDialog(true)}>
-              <Plus className="mr-2 h-4 w-4" />
-              Add Task
-            </Button>
-            <Button variant="outline" onClick={autoAssignTasks}>
+      {isGoalLoading ? (
+        <GoalsSkeleton />
+      ) : (
+        <div className="space-y-6">
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-3xl font-bold">Task Delegation</h1>
+              <p className="text-muted-foreground">Assign tasks for: {goal?.title}</p>
+            </div>
+            <div className="flex space-x-2">
+              <Button onClick={() => setShowAddDialog(true)}>
+                <Plus className="mr-2 h-4 w-4" />
+                Add Task
+              </Button>
+              {/* <Button variant="outline" onClick={autoAssignTasks}>
               <Shuffle className="mr-2 h-4 w-4" />
               Auto Assign
-            </Button>
-            <Button onClick={saveDelegation}>
+            </Button> */}
+              {/* <Button onClick={saveDelegation}>
               <Save className="mr-2 h-4 w-4" />
               Save Delegation
-            </Button>
+            </Button> */}
+            </div>
           </div>
-        </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Target className="h-5 w-5" />
-              <span>Goal Overview</span>
-            </CardTitle>
-            <CardDescription>{goal.description}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <Label className="text-sm font-medium">Total Tasks</Label>
-                <div className="text-2xl font-bold">{tasks.length}</div>
-              </div>
-              <div>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Target className="h-5 w-5" />
+                <span>Goal Overview</span>
+              </CardTitle>
+              <CardDescription>{goal?.description}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <Label className="text-sm font-medium">Total Tasks</Label>
+                  <div className="text-2xl font-bold">{tasks.length}</div>
+                </div>
+                {/* <div>
                 <Label className="text-sm font-medium">Assigned</Label>
                 <div className="text-2xl font-bold">{tasks.filter((t) => t.assignedTo).length}</div>
-              </div>
-              <div>
+              </div> */}
+                {/* <div>
                 <Label className="text-sm font-medium">Estimated Hours</Label>
                 <div className="text-2xl font-bold">{tasks.reduce((sum, task) => sum + task.estimatedHours, 0)}h</div>
+              </div> */}
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        <div className="space-y-4">
-          <h2 className="text-xl font-semibold">Task Assignment</h2>
-          {tasks.map((task) => (
-            <Card key={task.id}>
-              <CardContent className="pt-6">
-                <div className="space-y-4">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <h3 className="font-medium text-lg">{task.title}</h3>
-                      <p className="text-sm text-muted-foreground mt-1">{task.description}</p>
-                      <div className="flex items-center space-x-4 mt-2 text-sm text-muted-foreground">
+          <div className="space-y-4">
+            <h2 className="text-xl font-semibold">Task Assignment</h2>
+            {tasks.length === 0 ? (
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="flex flex-col items-center justify-center py-8 text-center">
+                    <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mb-4">
+                      <Target className="h-6 w-6 text-muted-foreground" />
+                    </div>
+                    <h3 className="font-medium text-lg mb-2">No Tasks Yet</h3>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Get started by adding tasks to this goal.
+                    </p>
+                    <Button onClick={() => setShowAddDialog(true)}>
+                      <Plus className="mr-2 h-4 w-4" />
+                      Add Your First Task
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              tasks.map((task) => (
+                <Card key={task._id}>
+                  <CardContent className="pt-6">
+                    <div className="space-y-4">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <h3 className="font-medium text-lg">{task.title}</h3>
+                          <p className="text-sm text-muted-foreground mt-1">{task.description}</p>
+                          {/* <div className="flex items-center space-x-4 mt-2 text-sm text-muted-foreground">
                         <span>Est. {task.estimatedHours}h</span>
+                      </div> */}
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Badge className={getPriorityColor(task.priority)}>{task.priority}</Badge>
+                          <Button variant="outline" size="sm" onClick={() => openEditDialog(task)}>
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="outline" size="sm">
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  This action cannot be undone. This will permanently delete the task "{task.title}".
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => handleDeleteTask(task._id)}>Delete</AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="space-y-2">
+
+                          <Label>Assign to</Label>
+                          <Select
+                            value={task.assignment?.assigned_to?._id?.toString() || ""}
+                            onValueChange={(value) => {
+                              const selectedMember = teamMembers.find(m => m._id.toString() === value);
+                              const updatedTask = {
+                                ...task,
+                                assignedTo: selectedMember
+                              };
+                              setTasks(prev => prev.map(t => t._id === task._id ? updatedTask : t));
+                              updateTaskAssignment(task._id, value);
+                            }}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select team member">
+                                {task.assignedTo?.first_name || task.assignment?.assigned_to?.first_name || "Select team member"}
+                              </SelectValue>
+                            </SelectTrigger>
+                            <SelectContent>
+                              {loadingTeamMembers ? (
+                                <div className="p-2 text-center text-sm text-muted-foreground">
+                                  Loading team members...
+                                </div>
+                              ) : teamMembers.length === 0 ? (
+                                <div className="p-2 text-center text-sm text-muted-foreground">
+                                  No team members found
+                                </div>
+                              ) : (
+                                teamMembers.map((member) => (
+                                  <SelectItem key={member._id} value={member._id.toString()}>
+                                    <div className="flex items-center space-x-2">
+                                      <span>{member.first_name}</span>
+                                      <Badge variant="outline" className="text-xs">
+                                        {member.roles[0].name}
+                                      </Badge>
+                                    </div>
+                                  </SelectItem>
+                                ))
+                              )}
+                            </SelectContent>
+                          </Select>
+                          {/* {task.assignedTo && (
+                            <div className="text-xs text-muted-foreground">
+                              Skills: {task.assignedTo.skillTags.slice(0, 3).join(", ")}
+                            </div>
+                          )} */}
+                        </div>
+
+                        {/* <div className="space-y-2">
+                          <Label>Due Date</Label>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button variant="outline" className="w-full justify-start text-left font-normal">
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {task.dueDate ? format(task.dueDate, "PPP") : "Set due date"}
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0">
+                              <Calendar
+                                mode="single"
+                                selected={task.dueDate || undefined}
+                                onSelect={(date) => updateTaskDueDate(task.id, date || null)}
+                                initialFocus
+                              />
+                            </PopoverContent>
+                          </Popover>
+                        </div> */}
+
+                        <div className="space-y-2">
+                          <Label>Priority</Label>
+                          <Select
+                            value={task.priority}
+                            onValueChange={(value: "low" | "medium" | "high") => updateTaskPriority(task.id, value)}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="low">Low</SelectItem>
+                              <SelectItem value="medium">Medium</SelectItem>
+                              <SelectItem value="high">High</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
                       </div>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <Badge className={getPriorityColor(task.priority)}>{task.priority}</Badge>
-                      <Button variant="outline" size="sm" onClick={() => openEditDialog(task)}>
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="outline" size="sm">
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              This action cannot be undone. This will permanently delete the task "{task.title}".
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => handleDeleteTask(task.id)}>Delete</AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </div>
-                  </div>
+                  </CardContent>
+                </Card>
+              ))
+            )}
+          </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="space-y-2">
-                      <Label>Assign to Team Member</Label>
-                      <Select
-                        value={task.assignedTo?.id.toString() || ""}
-                        onValueChange={(value) => updateTaskAssignment(task.id, value)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select team member" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {teamMembers.map((member) => (
-                            <SelectItem key={member.id} value={member.id.toString()}>
+          <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Add New Task</DialogTitle>
+                <DialogDescription>Create a new task for this goal.</DialogDescription>
+              </DialogHeader>
+
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="task-title">Task Title</Label>
+                  <Input
+                    id="task-title"
+                    value={taskForm.title}
+                    onChange={(e) => setTaskForm({ ...taskForm, title: e.target.value })}
+                    placeholder="Enter task title"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="task-description">Description</Label>
+                  <Textarea
+                    id="task-description"
+                    value={taskForm.description}
+                    onChange={(e) => setTaskForm({ ...taskForm, description: e.target.value })}
+                    placeholder="Enter task description"
+                    rows={3}
+                  />
+                </div>                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Assign to</Label>
+                    <Select
+                      value={taskForm.assignedTo}
+                      onValueChange={(value) => setTaskForm({ ...taskForm, assignedTo: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select team member" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {loadingTeamMembers ? (
+                          <div className="p-2 text-center text-sm text-muted-foreground">
+                            Loading team members...
+                          </div>
+                        ) : teamMembers.length === 0 ? (
+                          <div className="p-2 text-center text-sm text-muted-foreground">
+                            No team members found
+                          </div>
+                        ) : (
+                          teamMembers.map((member) => (
+                            <SelectItem key={member._id} value={member._id.toString()}>
                               <div className="flex items-center space-x-2">
-                                <span>{member.name}</span>
+                                <span>{member.first_name}</span>
                                 <Badge variant="outline" className="text-xs">
-                                  {member.role}
+                                  {member.roles[0].name}
                                 </Badge>
                               </div>
                             </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      {task.assignedTo && (
-                        <div className="text-xs text-muted-foreground">
-                          Skills: {task.assignedTo.skillTags.slice(0, 3).join(", ")}
-                        </div>
-                      )}
-                    </div>
+                          ))
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                    <div className="space-y-2">
-                      <Label>Due Date</Label>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button variant="outline" className="w-full justify-start text-left font-normal">
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {task.dueDate ? format(task.dueDate, "PPP") : "Set due date"}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0">
-                          <Calendar
-                            mode="single"
-                            selected={task.dueDate || undefined}
-                            onSelect={(date) => updateTaskDueDate(task.id, date || null)}
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label>Priority</Label>
-                      <Select
-                        value={task.priority}
-                        onValueChange={(value: "low" | "medium" | "high") => updateTaskPriority(task.id, value)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="low">Low</SelectItem>
-                          <SelectItem value="medium">Medium</SelectItem>
-                          <SelectItem value="high">High</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="task-priority">Priority</Label>
+                    <Select
+                      value={taskForm.priority}
+                      onValueChange={(value: "low" | "medium" | "high") => setTaskForm({ ...taskForm, priority: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="low">Low</SelectItem>
+                        <SelectItem value="medium">Medium</SelectItem>
+                        <SelectItem value="high">High</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          ))}
+              </div>
+
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setShowAddDialog(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={handleAddTask} disabled={!taskForm.title || !taskForm.description}>
+                  Add Task
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Edit Task</DialogTitle>
+                <DialogDescription>Update the task information.</DialogDescription>
+              </DialogHeader>
+
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-task-title">Task Title</Label>
+                  <Input
+                    id="edit-task-title"
+                    value={taskForm.title}
+                    onChange={(e) => setTaskForm({ ...taskForm, title: e.target.value })}
+                    placeholder="Enter task title"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="edit-task-description">Description</Label>
+                  <Textarea
+                    id="edit-task-description"
+                    value={taskForm.description}
+                    onChange={(e) => setTaskForm({ ...taskForm, description: e.target.value })}
+                    placeholder="Enter task description"
+                    rows={3}
+                  />
+                </div>                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Assign to</Label>
+                    <Select
+                      value={taskForm.assignedTo}
+                      onValueChange={(value) => setTaskForm({ ...taskForm, assignedTo: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select team member" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {loadingTeamMembers ? (
+                          <div className="p-2 text-center text-sm text-muted-foreground">
+                            Loading team members...
+                          </div>
+                        ) : teamMembers.length === 0 ? (
+                          <div className="p-2 text-center text-sm text-muted-foreground">
+                            No team members found
+                          </div>
+                        ) : (
+                          teamMembers.map((member) => (
+                            <SelectItem key={member._id} value={member._id.toString()}>
+                              <div className="flex items-center space-x-2">
+                                <span>{member.first_name}</span>
+                                <Badge variant="outline" className="text-xs">
+                                  {member.roles[0].name}
+                                </Badge>
+                              </div>
+                            </SelectItem>
+                          ))
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-task-priority">Priority</Label>
+                    <Select
+                      value={taskForm.priority}
+                      onValueChange={(value: "low" | "medium" | "high") => setTaskForm({ ...taskForm, priority: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="low">Low</SelectItem>
+                        <SelectItem value="medium">Medium</SelectItem>
+                        <SelectItem value="high">High</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setShowEditDialog(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={handleEditTask} disabled={!taskForm.title || !taskForm.description}>
+                  Save Changes
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
-
-        {/* Add Task Dialog */}
-        <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Add New Task</DialogTitle>
-              <DialogDescription>Create a new task for this goal.</DialogDescription>
-            </DialogHeader>
-
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="task-title">Task Title</Label>
-                <Input
-                  id="task-title"
-                  value={taskForm.title}
-                  onChange={(e) => setTaskForm({ ...taskForm, title: e.target.value })}
-                  placeholder="Enter task title"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="task-description">Description</Label>
-                <Textarea
-                  id="task-description"
-                  value={taskForm.description}
-                  onChange={(e) => setTaskForm({ ...taskForm, description: e.target.value })}
-                  placeholder="Enter task description"
-                  rows={3}
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="task-hours">Estimated Hours</Label>
-                  <Input
-                    id="task-hours"
-                    type="number"
-                    value={taskForm.estimatedHours}
-                    onChange={(e) => setTaskForm({ ...taskForm, estimatedHours: Number.parseInt(e.target.value) || 0 })}
-                    min="1"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="task-priority">Priority</Label>
-                  <Select
-                    value={taskForm.priority}
-                    onValueChange={(value: "low" | "medium" | "high") => setTaskForm({ ...taskForm, priority: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="low">Low</SelectItem>
-                      <SelectItem value="medium">Medium</SelectItem>
-                      <SelectItem value="high">High</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </div>
-
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setShowAddDialog(false)}>
-                Cancel
-              </Button>
-              <Button onClick={handleAddTask} disabled={!taskForm.title || !taskForm.description}>
-                Add Task
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-
-        {/* Edit Task Dialog */}
-        <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Edit Task</DialogTitle>
-              <DialogDescription>Update the task information.</DialogDescription>
-            </DialogHeader>
-
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="edit-task-title">Task Title</Label>
-                <Input
-                  id="edit-task-title"
-                  value={taskForm.title}
-                  onChange={(e) => setTaskForm({ ...taskForm, title: e.target.value })}
-                  placeholder="Enter task title"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="edit-task-description">Description</Label>
-                <Textarea
-                  id="edit-task-description"
-                  value={taskForm.description}
-                  onChange={(e) => setTaskForm({ ...taskForm, description: e.target.value })}
-                  placeholder="Enter task description"
-                  rows={3}
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="edit-task-hours">Estimated Hours</Label>
-                  <Input
-                    id="edit-task-hours"
-                    type="number"
-                    value={taskForm.estimatedHours}
-                    onChange={(e) => setTaskForm({ ...taskForm, estimatedHours: Number.parseInt(e.target.value) || 0 })}
-                    min="1"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="edit-task-priority">Priority</Label>
-                  <Select
-                    value={taskForm.priority}
-                    onValueChange={(value: "low" | "medium" | "high") => setTaskForm({ ...taskForm, priority: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="low">Low</SelectItem>
-                      <SelectItem value="medium">Medium</SelectItem>
-                      <SelectItem value="high">High</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </div>
-
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setShowEditDialog(false)}>
-                Cancel
-              </Button>
-              <Button onClick={handleEditTask} disabled={!taskForm.title || !taskForm.description}>
-                Save Changes
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </div>
+      )}
     </DashboardLayout>
   )
 }

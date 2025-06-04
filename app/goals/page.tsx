@@ -149,9 +149,6 @@ export default function GoalsPage() {
     isDeletingGoal,
   } = useGoals()
 
-  console.log("goals", goals);
-
-
   const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null)
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null)
   const [editForm, setEditForm] = useState({
@@ -265,6 +262,8 @@ export default function GoalsPage() {
     }
   }
 
+  console.log('goals', goals)
+
   if (!user && isLoading) {
     return <LoadingScreen />
   }
@@ -299,7 +298,7 @@ export default function GoalsPage() {
               <CardContent>
                 <div className="text-2xl font-bold">{goals.length}</div>
                 <p className="text-xs text-muted-foreground">
-                  {goals.filter((g) => g.status === "in_progress").length} active
+                  {(goals && goals?.filter((g) => g?.status === "in_progress").length) || 0} active
                 </p>
               </CardContent>
             </Card>
