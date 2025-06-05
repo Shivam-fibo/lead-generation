@@ -481,9 +481,8 @@ export default function GoalsPage() {
                                   <div className="flex items-center space-x-4 mt-2 text-sm">
                                     <div className="flex items-center space-x-1">
                                       <Users className="h-4 w-4 text-muted-foreground" />
-                                      <span>{task.assignedTo.name}</span>
+                                      <span>{task?.assignment?.assigned_to?.first_name}</span>
                                     </div>
-                                    <div className="text-muted-foreground">{task.estimatedHours}h</div>
                                   </div>
                                 </div>
                                 <div className="flex flex-col items-end space-y-2">
