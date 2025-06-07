@@ -316,14 +316,13 @@ export const tasksApi = {
   //   }))
   // },
 
-  taskAssign: async (taskAssign: Partial<TaskAssign>): Promise<TaskAssign> => {
+  taskAssign: async (taskAssign: Partial<TaskAssign>): Promise<any> => {
     try {
       const response = await fetchApi<{ taskAssign: TaskAssign }>('/assign-task', {
         method: 'PUT',
         body: JSON.stringify(taskAssign)
       });
-
-      // if (!response) return [];
+      if (!response) return [];
       return response
     } catch (error) {
       throw error;
@@ -395,13 +394,24 @@ export const tasksApi = {
 
 
 export const aiAssistantApi = {
-  chatWithAI: async (message: Partial<any>): Promise<any> => {
+  chatWithAI: async (message: { message: string; sessionId: string }): Promise<any> => {
+      console.log('Reached CHAT WITH AI')
     try {
-      const response = await fetchApi<{ message: any }>('/message', {
+      const response = await fetchApi<{ data: any }>('/message', {
         method: 'POST',
-        body: JSON.stringify({ message })
+        body: JSON.stringify(message)
       });
-      return response.data;
+      return response.data.ai_goal;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  // Get messages for a specific session
+  getSessionMessages: async (sessionId: string): Promise<any[]> => {
+    try {
+      const response = await fetchApi<{ messages: any[] }>(`/session/${sessionId}/messages`);
+      return response.messages || [];
     } catch (error) {
       throw error;
     }
@@ -409,15 +419,56 @@ export const aiAssistantApi = {
 }
 
 export const aiSessionApi = {
-  createAISession: async (title: String): Promise<any> => {
+  // Existing createAISession method - already good
+  createAISession: async (title: string): Promise<any> => {
     try {
-      const response = await fetchApi<{ data: any  }>('/create-session', {
+      const response = await fetchApi<{ data: any }>('/create-session', {
         method: 'POST',
         body: JSON.stringify({ title })
       });
       if (!response.data) return {};
-      console.log('response', response)
       return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  // Get all sessions for current user
+  getAllSessions: async (): Promise<any[]> => {
+    try {
+      const response = await fetchApi<{ sessions: any[] }>('/sessions');
+      return response.sessions || [];
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  getSession: async (sessionId: string): Promise<any> => {
+    try {
+      const response = await fetchApi<{ session: any }>(`/get-session?id=${sessionId}`);
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  updateSessionTitle: async (sessionId: string, title: string): Promise<any> => {
+    try {
+      const response = await fetchApi<{ session: any }>(`/session/${sessionId}`, {
+        method: 'PUT',
+        body: JSON.stringify({ title })
+      });
+      return response.session;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  deleteSession: async (sessionId: string): Promise<void> => {
+    try {
+      await fetchApi(`/session/${sessionId}`, {
+        method: 'DELETE'
+      });
     } catch (error) {
       throw error;
     }

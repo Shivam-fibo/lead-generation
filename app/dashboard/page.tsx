@@ -11,6 +11,9 @@ import { Users, Target, FileText, BarChart3, TrendingUp, Activity, Bot, Sparkles
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import { Bar, BarChart, Line, LineChart, XAxis, YAxis } from "recharts"
 import { useAuthStore } from "@/stores/auth-store"
+import { useSessionStore } from '@/stores/ai-session-store'
+import { useAiSession } from "@/hooks/use-ai-session"
+import { useQueryClient } from "@tanstack/react-query"
 
 interface User {
   id: number
@@ -58,13 +61,18 @@ export default function Dashboard() {
   const { user } = useAuthStore()
   const [isPageLoading, setIsPageLoading] = useState(false)
   const router = useRouter()
+  const queryClient = useQueryClient()
+
+  const { createSession } = useAiSession(undefined, {
+    enableQueries: false
+  })
 
   useEffect(() => {
     if (!user) {
       router.push("/")
       return
     }
-  
+
   }, [router, user])
 
   if (!user) {
@@ -76,6 +84,19 @@ export default function Dashboard() {
   const userRole = user.roles[0].name
   const canUseAI = userRole === "CEO" || userRole === "Admin" || userRole === "Team Leader"
 
+  const createNewChatSession = () => {
+    if (canUseAI) {
+      createSession(
+        { title: "New AI Chat" },
+        {
+          onSuccess: (newSession) => {
+            router.push(`/chat/${newSession._id}`)
+          }
+        }
+      )
+    }
+  }
+  
   return (
     <PageWrapper>
       <DashboardLayout>
@@ -204,7 +225,7 @@ export default function Dashboard() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <Button onClick={() => router.push("/ai-assistant")} className="w-full">
+                    <Button onClick={() => createNewChatSession()} className="w-full">
                       <Bot className="mr-2 h-4 w-4" />
                       Open AI Assistant
                     </Button>

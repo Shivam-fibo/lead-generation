@@ -48,7 +48,7 @@ const data = {
     },
     {
       title: "AI Assistant",
-      url: "/ai-assistant",
+      url: "/chat",
       icon: Bot,
       items: [],
     },
@@ -91,6 +91,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     })
   }
 
+  const isNavItemActive = (itemUrl: string) => {
+    if (itemUrl === "/chat") {
+      return pathname.startsWith("/chat")
+    }
+    return pathname === itemUrl
+  }
+
   if (!user) {
     return null
   }
@@ -103,7 +110,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const canUseAI = userRole === "CEO" || userRole === "Admin" || userRole === "Team Leader"
 
   const filteredNavMain = data.navMain.filter((item) => {
-    if (item.url === "/ai-assistant") return canUseAI
+    if (item.url === "/chat") return canUseAI // Fixed: was checking "/ai-assistant"
     if (item.url === "/team") return canManageTeam
     if (item.url === "/goals") return canCreateGoals
     if (item.url === "/my-tasks") return canViewTasks
@@ -137,7 +144,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <SidebarMenu>
               {filteredNavMain.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild isActive={pathname === item.url}>
+                  <SidebarMenuButton asChild isActive={isNavItemActive(item.url)}>
                     <a href={item.url}>
                       <item.icon />
                       <span>{item.title}</span>
