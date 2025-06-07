@@ -2,7 +2,20 @@
 
 import type * as React from "react"
 import { useRouter, usePathname } from "next/navigation"
-import { Home, Users, Target, FileText, BarChart3, Settings, LogOut, ChevronUp, Moon, Sun, Monitor } from "lucide-react"
+import {
+  Home,
+  Users,
+  Target,
+  FileText,
+  BarChart3,
+  Settings,
+  LogOut,
+  ChevronUp,
+  Moon,
+  Sun,
+  Monitor,
+  Bot,
+} from "lucide-react"
 import { useTheme } from "next-themes"
 import { useAuth } from "@/hooks/use-auth"
 
@@ -31,6 +44,12 @@ const data = {
       url: "/dashboard",
       icon: Home,
       isActive: true,
+      items: [],
+    },
+    {
+      title: "AI Assistant",
+      url: "/ai-assistant",
+      icon: Bot,
       items: [],
     },
     {
@@ -75,14 +94,16 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   if (!user) {
     return null
   }
-    
+
   const userRole = user.roles[0].name
   const canManageTeam = userRole === "Admin"
   const canCreateGoals = userRole === "CEO" || userRole === "Admin"
   const canViewTasks = userRole === "Team Member" || userRole === "Team Leader"
   const canViewProgress = userRole === "Admin" || userRole === "CEO" || userRole === "Team Leader"
+  const canUseAI = userRole === "CEO" || userRole === "Admin" || userRole === "Team Leader"
 
   const filteredNavMain = data.navMain.filter((item) => {
+    if (item.url === "/ai-assistant") return canUseAI
     if (item.url === "/team") return canManageTeam
     if (item.url === "/goals") return canCreateGoals
     if (item.url === "/my-tasks") return canViewTasks

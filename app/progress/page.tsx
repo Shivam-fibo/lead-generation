@@ -507,7 +507,7 @@ export default function ProgressMonitor() {
               </CardContent>
             </Card>
 
-            <Card>
+            {/* <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Departments</CardTitle>
                 <BarChart3 className="h-4 w-4 text-muted-foreground" />
@@ -516,7 +516,7 @@ export default function ProgressMonitor() {
                 <div className="text-2xl font-bold">{departmentProgress.length}</div>
                 <p className="text-xs text-muted-foreground">Active departments</p>
               </CardContent>
-            </Card>
+            </Card> */}
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -531,7 +531,7 @@ export default function ProgressMonitor() {
           </div>
 
           {/* Charts */}
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+          {/* <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
             <Card className="col-span-4">
               <CardHeader>
                 <CardTitle>Department Performance</CardTitle>
@@ -582,7 +582,7 @@ export default function ProgressMonitor() {
                 </ChartContainer>
               </CardContent>
             </Card>
-          </div>
+          </div> */}
 
           {/* Filters */}
           <Card>

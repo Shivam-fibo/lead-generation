@@ -7,7 +7,7 @@ import { PageWrapper } from "@/components/page-wrapper"
 import { DashboardSkeleton } from "@/components/loading-screen"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Users, Target, FileText, BarChart3, TrendingUp, Activity } from "lucide-react"
+import { Users, Target, FileText, BarChart3, TrendingUp, Activity, Bot, Sparkles } from "lucide-react"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import { Bar, BarChart, Line, LineChart, XAxis, YAxis } from "recharts"
 import { useAuthStore } from "@/stores/auth-store"
@@ -56,7 +56,7 @@ const chartConfig = {
 
 export default function Dashboard() {
   const { user } = useAuthStore()
-  const [isPageLoading, setIsPageLoading] = useState(true)
+  const [isPageLoading, setIsPageLoading] = useState(false)
   const router = useRouter()
 
   useEffect(() => {
@@ -64,11 +64,7 @@ export default function Dashboard() {
       router.push("/")
       return
     }
-
-    // Simulate content loading
-    setTimeout(() => {
-      setIsPageLoading(false)
-    }, 300)
+  
   }, [router, user])
 
   if (!user) {
@@ -77,6 +73,8 @@ export default function Dashboard() {
 
   const canManageTeam = user.roles[0].name === "Admin"
   const canCreateGoals = user.roles[0].name === "CEO" || user.roles[0].name === "Admin"
+  const userRole = user.roles[0].name
+  const canUseAI = userRole === "CEO" || userRole === "Admin" || userRole === "Team Leader"
 
   return (
     <PageWrapper>
@@ -136,7 +134,7 @@ export default function Dashboard() {
               </Card>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+            {/* <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
               <Card className="col-span-4">
                 <CardHeader>
                   <CardTitle>Task Completion Overview</CardTitle>
@@ -189,9 +187,31 @@ export default function Dashboard() {
                   </ChartContainer>
                 </CardContent>
               </Card>
-            </div>
+            </div> */}
 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-2">
+
+              {canUseAI && (
+                <Card className="border-2 border-dashed border-primary/20 bg-primary/5">
+                  <CardHeader>
+                    <CardTitle className="flex items-center space-x-2">
+                      <Bot className="h-5 w-5 text-primary" />
+                      <span>AI Assistant</span>
+                      <Sparkles className="h-4 w-4 text-primary" />
+                    </CardTitle>
+                    <CardDescription>
+                      Chat with AI to create goals, delegate tasks, and manage projects intelligently
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Button onClick={() => router.push("/ai-assistant")} className="w-full">
+                      <Bot className="mr-2 h-4 w-4" />
+                      Open AI Assistant
+                    </Button>
+                  </CardContent>
+                </Card>
+              )}
+
               {canCreateGoals && (
                 <Card>
                   <CardHeader>

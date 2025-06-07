@@ -113,6 +113,13 @@ export interface Goal {
   assigned_to: string;
 }
 
+export interface AiMessage {
+  userMessage: string;
+  aiResponse: string;
+  actionItems: string;
+  timestamp: string;
+}
+
 // Simulate API delay
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
@@ -311,7 +318,7 @@ export const tasksApi = {
 
   taskAssign: async (taskAssign: Partial<TaskAssign>): Promise<TaskAssign> => {
     try {
-       const response = await fetchApi<{ taskAssign: TaskAssign }>('/assign-task', {
+      const response = await fetchApi<{ taskAssign: TaskAssign }>('/assign-task', {
         method: 'PUT',
         body: JSON.stringify(taskAssign)
       });
@@ -384,4 +391,35 @@ export const tasksApi = {
   //     localStorage.setItem("allTasks", JSON.stringify(tasksToSave))
   //     return tasks
   //   },
+}
+
+
+export const aiAssistantApi = {
+  chatWithAI: async (message: Partial<any>): Promise<any> => {
+    try {
+      const response = await fetchApi<{ message: any }>('/message', {
+        method: 'POST',
+        body: JSON.stringify({ message })
+      });
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+}
+
+export const aiSessionApi = {
+  createAISession: async (title: String): Promise<any> => {
+    try {
+      const response = await fetchApi<{ data: any  }>('/create-session', {
+        method: 'POST',
+        body: JSON.stringify({ title })
+      });
+      if (!response.data) return {};
+      console.log('response', response)
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
 }
