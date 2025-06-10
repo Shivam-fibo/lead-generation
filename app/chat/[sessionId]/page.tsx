@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
+import { Label } from "@/components/ui/label"
 import {
     Dialog,
     DialogContent,
@@ -38,6 +39,10 @@ import {
 
 import { useAiMessage } from "@/hooks/use-assistant"
 import { useAiSession } from "@/hooks/use-ai-session"
+import { useQueryClient } from "@tanstack/react-query"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useTeamMemberList } from "@/hooks/use-team"
+import { useAITasks } from "@/hooks/use-ai-tasks"
 
 interface UserType {
     id: number
@@ -121,37 +126,49 @@ const defaultTeamMembers: TeamMember[] = [
 
 export default function AIAssistant() {
     const [user, setUser] = useState<UserType | null>(null)
-    const [teamMembers, setTeamMembers] = useState<TeamMember[]>(defaultTeamMembers)
+    // const [teamMembers, setTeamMembers] = useState<TeamMember[]>(defaultTeamMembers)
     const [messages, setMessages] = useState<ChatMessage[]>([])
     const [inputMessage, setInputMessage] = useState("")
     const [isLoading, setIsLoading] = useState(false)
     // const [currentGoal, setCurrentGoal] = useState<AIGoal | null>(null)
     const [showApprovalDialog, setShowApprovalDialog] = useState(false)
-    const [editingTask, setEditingTask] = useState<AITask | null>(null)
+    const [editingTask, setEditingTask] = useState<any | null>(null)
     const [viewingTask, setViewingTask] = useState<AITask | null>(null)
     const [isPageLoading, setIsPageLoading] = useState(true)
     const [sidebarOpen, setSidebarOpen] = useState(true)
     const [sidebarTab, setSidebarTab] = useState<"history" | "tasks">("tasks")
     const [chatSessions, setChatSessions] = useState<ChatSession[]>([])
     const [currentSessionId, setCurrentSessionId] = useState<string>("")
+    const queryClient = useQueryClient()
     const messagesEndRef = useRef<HTMLDivElement>(null)
 
     const router = useRouter()
     const { sessionId } = useParams<{ sessionId: string }>();
 
-    const { 
-        createSession, 
-        currentSession, 
-        isSessionLoading, 
-        sendMessage,
-        currentMessages,
+    const { members: teamMembers, isLoading: loadingTeamMembers } = useTeamMemberList()
+
+    const {
+        createSession,
+        currentSession,
+        isSessionLoading,
+        sendMessageToSession,
+        approveAiGoal
     } = useAiSession(sessionId, {
         enableQueries: false
     })
-    console.log('currentSession', currentSession)
-    
-    const currentGoal = currentSession?.ai_goal;
 
+    const {
+        createAiTask,
+        updateAiTask,
+        deleteAiTask,
+        assignAiTask,
+        // isUpdatingAiTask,
+        // isSavingAiTasks,
+        // isDeletingAiTask,
+        // isAssigningAiTask,
+    } = useAITasks()
+
+    const currentGoal = currentSession?.ai_goal;
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -210,27 +227,14 @@ export default function AIAssistant() {
     }, [router])
 
     const startNewSession = () => {
-        const sessionId = `session_${Date.now()}`
-        const welcomeMessage: ChatMessage = {
-            id: "welcome",
-            type: "ai",
-            content:
-                "Hello! I'm your AI Assistant. I can help you create goals, break them down into tasks, and delegate them to your team members. What would you like to accomplish today?",
-            timestamp: new Date(),
-        }
-
-        const newSession: ChatSession = {
-            id: sessionId,
-            title: "New Chat",
-            messages: [welcomeMessage],
-            createdAt: new Date(),
-            lastActivity: new Date(),
-        }
-
-        setCurrentSessionId(sessionId)
-        setMessages([welcomeMessage])
-        setChatSessions(prev => [newSession, ...prev])
-        setCurrentGoal(null)
+        createSession(
+            { title: "New AI Chat" },
+            {
+                onSuccess: (newSession) => {
+                    router.push(`/chat/${newSession._id}`)
+                }
+            }
+        )
     }
 
     const saveCurrentSession = () => {
@@ -280,268 +284,17 @@ export default function AIAssistant() {
         return bestMatch || teamMembers[0] || null
     }
 
-
-
-    const generateAIResponse = async (userMessage: string): Promise<{ content: string; goal?: AIGoal }> => {
-        // Simulate AI processing delay
-        await new Promise((resolve) => setTimeout(resolve, 2000))
-
-        const lowerMessage = userMessage.toLowerCase()
-
-        // Check if user is asking to create a goal/project
-        if (
-            lowerMessage.includes("create") ||
-            lowerMessage.includes("build") ||
-            lowerMessage.includes("develop") ||
-            lowerMessage.includes("implement") ||
-            lowerMessage.includes("launch")
-        ) {
-            // Generate a goal with tasks based on the user's request
-            const goalId = `goal_${Date.now()}`
-
-            let goalTitle = ""
-            let goalDescription = ""
-            let tasks: AITask[] = []
-
-            if (lowerMessage.includes("website") || lowerMessage.includes("web app")) {
-                goalTitle = "Website Development Project"
-                goalDescription = "Create a modern, responsive website with full functionality"
-                tasks = [
-                    {
-                        id: `${goalId}_task_1`,
-                        title: "UI/UX Design",
-                        description: "Create wireframes, mockups, and user interface designs",
-                        assignedTo: findBestTeamMember(["design", "ui", "ux"]),
-                        estimatedHours: 20,
-                        priority: "high",
-                        dependencies: [],
-                        skills: ["Design", "UI/UX", "Figma"],
-                    },
-                    {
-                        id: `${goalId}_task_2`,
-                        title: "Frontend Development",
-                        description: "Implement the user interface using React and modern web technologies",
-                        assignedTo: findBestTeamMember(["frontend", "react"]),
-                        estimatedHours: 32,
-                        priority: "high",
-                        dependencies: [`${goalId}_task_1`],
-                        skills: ["Frontend", "React", "TypeScript"],
-                    },
-                    {
-                        id: `${goalId}_task_3`,
-                        title: "Backend API Development",
-                        description: "Build REST API endpoints and database integration",
-                        assignedTo: findBestTeamMember(["backend", "api"]),
-                        estimatedHours: 28,
-                        priority: "high",
-                        dependencies: [],
-                        skills: ["Backend", "Node.js", "Database"],
-                    },
-                    {
-                        id: `${goalId}_task_4`,
-                        title: "Testing & Quality Assurance",
-                        description: "Comprehensive testing including unit tests and integration tests",
-                        assignedTo: findBestTeamMember(["testing", "qa"]),
-                        estimatedHours: 16,
-                        priority: "medium",
-                        dependencies: [`${goalId}_task_2`, `${goalId}_task_3`],
-                        skills: ["Testing", "QA", "Automation"],
-                    },
-                    {
-                        id: `${goalId}_task_5`,
-                        title: "Deployment & Launch",
-                        description: "Deploy to production and monitor initial launch",
-                        assignedTo: findBestTeamMember(["devops", "deployment"]),
-                        estimatedHours: 12,
-                        priority: "medium",
-                        dependencies: [`${goalId}_task_4`],
-                        skills: ["DevOps", "Deployment", "Monitoring"],
-                    },
-                ]
-            } else if (lowerMessage.includes("mobile app")) {
-                goalTitle = "Mobile Application Development"
-                goalDescription = "Develop a cross-platform mobile application"
-                tasks = [
-                    {
-                        id: `${goalId}_task_1`,
-                        title: "Mobile UI Design",
-                        description: "Design mobile-first user interface and user experience",
-                        assignedTo: findBestTeamMember(["design", "mobile"]),
-                        estimatedHours: 24,
-                        priority: "high",
-                        dependencies: [],
-                        skills: ["Mobile Design", "UI/UX", "Figma"],
-                    },
-                    {
-                        id: `${goalId}_task_2`,
-                        title: "React Native Development",
-                        description: "Build cross-platform mobile app using React Native",
-                        assignedTo: findBestTeamMember(["mobile", "react"]),
-                        estimatedHours: 40,
-                        priority: "high",
-                        dependencies: [`${goalId}_task_1`],
-                        skills: ["React Native", "Mobile Development", "JavaScript"],
-                    },
-                    {
-                        id: `${goalId}_task_3`,
-                        title: "API Integration",
-                        description: "Integrate with backend APIs and third-party services",
-                        assignedTo: findBestTeamMember(["backend", "api"]),
-                        estimatedHours: 20,
-                        priority: "medium",
-                        dependencies: [`${goalId}_task_2`],
-                        skills: ["API Integration", "Backend", "Mobile"],
-                    },
-                    {
-                        id: `${goalId}_task_4`,
-                        title: "App Store Deployment",
-                        description: "Prepare and deploy to iOS App Store and Google Play Store",
-                        assignedTo: findBestTeamMember(["mobile", "deployment"]),
-                        estimatedHours: 16,
-                        priority: "low",
-                        dependencies: [`${goalId}_task_3`],
-                        skills: ["App Store", "Deployment", "Mobile"],
-                    },
-                ]
-            } else if (lowerMessage.includes("marketing") || lowerMessage.includes("campaign")) {
-                goalTitle = "Marketing Campaign Launch"
-                goalDescription = "Execute a comprehensive marketing campaign to increase brand awareness"
-                tasks = [
-                    {
-                        id: `${goalId}_task_1`,
-                        title: "Market Research",
-                        description: "Conduct market analysis and competitor research",
-                        assignedTo: findBestTeamMember(["marketing", "research"]),
-                        estimatedHours: 16,
-                        priority: "high",
-                        dependencies: [],
-                        skills: ["Marketing", "Research", "Analytics"],
-                    },
-                    {
-                        id: `${goalId}_task_2`,
-                        title: "Content Creation",
-                        description: "Create marketing materials, copy, and visual assets",
-                        assignedTo: findBestTeamMember(["content", "design"]),
-                        estimatedHours: 24,
-                        priority: "high",
-                        dependencies: [`${goalId}_task_1`],
-                        skills: ["Content", "Design", "Copywriting"],
-                    },
-                    {
-                        id: `${goalId}_task_3`,
-                        title: "Social Media Strategy",
-                        description: "Develop and execute social media marketing strategy",
-                        assignedTo: findBestTeamMember(["social", "marketing"]),
-                        estimatedHours: 20,
-                        priority: "medium",
-                        dependencies: [`${goalId}_task_2`],
-                        skills: ["Social Media", "Marketing", "Content"],
-                    },
-                    {
-                        id: `${goalId}_task_4`,
-                        title: "Campaign Analytics",
-                        description: "Track campaign performance and optimize based on data",
-                        assignedTo: findBestTeamMember(["analytics", "marketing"]),
-                        estimatedHours: 12,
-                        priority: "medium",
-                        dependencies: [`${goalId}_task_3`],
-                        skills: ["Analytics", "Marketing", "Data Analysis"],
-                    },
-                ]
-            } else {
-                // Generic project based on user input
-                goalTitle = "Custom Project"
-                goalDescription = `Project based on: ${userMessage}`
-                tasks = [
-                    {
-                        id: `${goalId}_task_1`,
-                        title: "Project Planning",
-                        description: "Define project scope, requirements, and timeline",
-                        assignedTo: findBestTeamMember(["management", "planning"]),
-                        estimatedHours: 12,
-                        priority: "high",
-                        dependencies: [],
-                        skills: ["Project Management", "Planning", "Strategy"],
-                    },
-                    {
-                        id: `${goalId}_task_2`,
-                        title: "Implementation",
-                        description: "Execute the main project deliverables",
-                        assignedTo: teamMembers[0] || null,
-                        estimatedHours: 24,
-                        priority: "high",
-                        dependencies: [`${goalId}_task_1`],
-                        skills: ["Implementation", "Development"],
-                    },
-                    {
-                        id: `${goalId}_task_3`,
-                        title: "Review & Testing",
-                        description: "Quality assurance and final review",
-                        assignedTo: findBestTeamMember(["qa", "testing"]),
-                        estimatedHours: 8,
-                        priority: "medium",
-                        dependencies: [`${goalId}_task_2`],
-                        skills: ["QA", "Testing", "Review"],
-                    },
-                ]
-            }
-
-            const totalHours = tasks.reduce((sum, task) => sum + task.estimatedHours, 0)
-            const estimatedDuration = `${Math.ceil(totalHours / 8)} working days`
-
-            const goal: AIGoal = {
-                id: goalId,
-                title: goalTitle,
-                description: goalDescription,
-                tasks,
-                estimatedDuration,
-                totalHours,
-            }
-
-            return {
-                content: `I've analyzed your request and created a comprehensive plan for "${goalTitle}". Here's what I've prepared:
-
-📋 **Project Overview:**
-${goalDescription}
-
-⏱️ **Estimated Duration:** ${estimatedDuration} (${totalHours} total hours)
-📝 **Tasks Created:** ${tasks.length} tasks
-👥 **Team Members Involved:** ${new Set(tasks.map((t) => t.assignedTo?.name).filter(Boolean)).size}
-
-I've automatically assigned tasks to team members based on their skills and expertise. You can review and modify the assignments in the task delegation panel. Would you like me to explain any specific task or make adjustments?`,
-                goal,
-            }
-        }
-
-        // Handle task modification requests
-        if (lowerMessage.includes("modify") || lowerMessage.includes("change") || lowerMessage.includes("update")) {
-            return {
-                content:
-                    "I can help you modify the tasks! You can use the task delegation panel on the right to edit task details, change assignments, adjust priorities, or update time estimates. What specific changes would you like to make?",
-            }
-        }
-
-        // Handle questions about team or capabilities
-        if (lowerMessage.includes("team") || lowerMessage.includes("members")) {
-            const teamSummary = teamMembers
-                .map((member) => `• ${member.name} (${member.role}) - ${member.skillTags.slice(0, 3).join(", ")}`)
-                .join("\n")
-
-            return {
-                content: `Here's your current team:\n\n${teamSummary}\n\nI can assign tasks based on their skills and expertise. What project would you like to work on?`,
-            }
-        }
-
-        // Default helpful response
-        return {
-            content:
-                "I'm here to help you create and manage projects! I can break down complex goals into actionable tasks and assign them to your team members based on their skills. Try asking me to:\n\n• Create a website or web application\n• Build a mobile app\n• Launch a marketing campaign\n• Or describe any other project you have in mind\n\nWhat would you like to work on?",
-        }
-    }
-
     const handleSendMessage = async () => {
         if (!inputMessage.trim()) return;
-        sendMessage({ message: inputMessage, sessionId })
+        sendMessageToSession({ message: inputMessage, sessionId },
+            {
+                onSuccess: () => {
+                    queryClient.invalidateQueries({
+                        queryKey: ["sessionMessages", sessionId]
+                    })
+                }
+            }
+        )
         setInputMessage("")
     }
 
@@ -555,81 +308,50 @@ I've automatically assigned tasks to team members based on their skills and expe
 
     const handleTaskUpdate = (updatedTask: AITask) => {
         if (!currentGoal) return
-
-        const updatedTasks = currentGoal.tasks.map((task) => (task.id === updatedTask.id ? updatedTask : task))
-        const updatedGoal = {
-            ...currentGoal,
-            tasks: updatedTasks,
-            totalHours: updatedTasks.reduce((sum, task) => sum + task.estimatedHours, 0),
-            estimatedDuration: `${Math.ceil(updatedTasks.reduce((sum, task) => sum + task.estimatedHours, 0) / 8)} working days`,
-        }
-
-        setCurrentGoal(updatedGoal)
+        updateAiTask({
+            taskId: editingTask._id,
+            task: updatedTask
+        }, {
+            onSuccess: () => {
+                queryClient.invalidateQueries({
+                    queryKey: ["sessionMessages", sessionId]
+                })
+            }
+        })
         setEditingTask(null)
     }
 
+    // const updateAiTaskAssignment = (taskId: string, memberId: string) => {
+    //     assignAiTask(
+    //         { task_id: taskId, assigned_to: memberId },
+    //         {
+    //             onSuccess: (response) => {
+    //                 setEditingTask(prev => ({
+    //                     ...prev,
+    //                     assignment: response.taskAssign
+    //                 }));
+    //                 queryClient.invalidateQueries({
+    //                     queryKey: ["sessionMessages", sessionId]
+    //                 });
+    //             }
+    //         }
+    //     )
+    // }
+
     const handleTaskDelete = (taskId: string) => {
         if (!currentGoal) return
-
-        const updatedTasks = currentGoal.tasks.filter((task) => task.id !== taskId)
-        const updatedGoal = {
-            ...currentGoal,
-            tasks: updatedTasks,
-            totalHours: updatedTasks.reduce((sum, task) => sum + task.estimatedHours, 0),
-            estimatedDuration: `${Math.ceil(updatedTasks.reduce((sum, task) => sum + task.estimatedHours, 0) / 8)} working days`,
-        }
-
-        setCurrentGoal(updatedGoal)
+        deleteAiTask(taskId, {
+            onSuccess: () => {
+                queryClient.invalidateQueries({
+                    queryKey: ["sessionMessages", sessionId]
+                })
+            }
+        })
     }
 
     const handleApproveGoal = () => {
         if (!currentGoal || !user) return
-
-        // Create the goal in the existing system
-        const newGoal = {
-            id: Date.now(),
-            title: currentGoal.title,
-            description: currentGoal.description,
-            status: "active" as const,
-            createdAt: new Date().toISOString().split("T")[0],
-            assignedTasks: currentGoal.tasks.length,
-            completedTasks: 0,
-        }
-
-        // Create tasks for the delegation system
-        const tasks = currentGoal.tasks.map((task, index) => ({
-            id: Date.now() + index,
-            title: task.title,
-            description: task.description,
-            assignedTo: task.assignedTo,
-            estimatedHours: task.estimatedHours,
-            priority: task.priority,
-            status: "not-started" as const,
-            dueDate: null,
-            goalId: newGoal.id,
-            goalTitle: newGoal.title,
-        }))
-
-        // Save to localStorage
-        const existingGoals = JSON.parse(localStorage.getItem("goals") || "[]")
-        localStorage.setItem("goals", JSON.stringify([...existingGoals, newGoal]))
-
-        const existingTasks = JSON.parse(localStorage.getItem("allTasks") || "[]")
-        localStorage.setItem("allTasks", JSON.stringify([...existingTasks, ...tasks]))
-
-        setShowApprovalDialog(false)
-        setCurrentGoal(null)
-
-        // Add success message
-        const successMessage: ChatMessage = {
-            id: `ai_success_${Date.now()}`,
-            type: "ai",
-            content: `🎉 Perfect! I've successfully created "${newGoal.title}" with ${tasks.length} tasks assigned to your team members. You can now track progress in the Goals & Tasks section. Is there anything else you'd like me to help you with?`,
-            timestamp: new Date(),
-        }
-
-        setMessages(prev => [...prev, successMessage])
-        saveCurrentSession()
+        approveAiGoal(currentGoal)
     }
 
     const getPriorityColor = (priority: string) => {
@@ -653,10 +375,12 @@ I've automatically assigned tasks to team members based on their skills and expe
     //     return null
     // }
 
+    console.log('editingTask', editingTask)
+
     return (
         <DashboardLayout breadcrumbs={[{ label: "AI Assistant" }]}>
             <div className="space-y-6">
-            
+
                 <div className="flex gap-4 h-[calc(100vh-100px)]">
                     {/* Chat Interface */}
                     <div className="flex-1 min-w-0">
@@ -687,7 +411,7 @@ I've automatically assigned tasks to team members based on their skills and expe
                                                         className={`max-w-[85%] sm:max-w-[80%] rounded-lg p-3 bg-primary text-primary-foreground`}
                                                     >
                                                         <div className="flex items-start space-x-2">
-                                                           
+
                                                             <div className="flex-1 min-w-0">
                                                                 <div className="whitespace-pre-wrap text-sm break-words">{message.userMessage}</div>
                                                                 {/* <div className="text-xs opacity-70 mt-1">{message.createdAt.toLocaleTimeString()}</div> */}
@@ -743,7 +467,7 @@ I've automatically assigned tasks to team members based on their skills and expe
                                         placeholder="Ask me to create a project, delegate tasks, or anything else..."
                                         value={inputMessage}
                                         onChange={(e) => setInputMessage(e.target.value)}
-                                        onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
+                                        // onKeyPress={(e) => e.key === "Enter" && handleSendMessage(e)}
                                         disabled={isSessionLoading}
                                         className="flex-1 text-sm"
                                     />
@@ -838,12 +562,13 @@ I've automatically assigned tasks to team members based on their skills and expe
                                                                             <div className="flex items-center justify-between text-xs">
                                                                                 <div className="flex items-center space-x-1 sm:space-x-2 min-w-0">
                                                                                     <Badge className={`${getPriorityColor(task.priority)} text-xs px-1`}>{task.priority}</Badge>
-                                                                                    <span className="text-muted-foreground flex-shrink-0">{task.estimatedHours}h</span>
+                                                                                    {/* <span className="text-muted-foreground flex-shrink-0">{task.estimatedHours}h</span> */}
                                                                                 </div>
-                                                                                {task.assignedTo && (
+
+                                                                                {task?.assignment?.assigned_to?._id && (
                                                                                     <div className="flex items-center space-x-1 min-w-0">
                                                                                         <Users className="h-3 w-3 flex-shrink-0" />
-                                                                                        <span className="truncate max-w-16 sm:max-w-20">{task.assignedTo.name}</span>
+                                                                                        <span className="truncate max-w-16 sm:max-w-20">{task?.assignment?.assigned_to.first_name}</span>
                                                                                     </div>
                                                                                 )}
                                                                             </div>
@@ -855,7 +580,7 @@ I've automatically assigned tasks to team members based on their skills and expe
                                                                                 <Button variant="ghost" size="sm" onClick={() => handleTaskEdit(task)} className="h-6 w-6 p-0">
                                                                                     <Edit className="h-3 w-3" />
                                                                                 </Button>
-                                                                                <Button variant="ghost" size="sm" onClick={() => handleTaskDelete(task.id)} className="h-6 w-6 p-0">
+                                                                                <Button variant="ghost" size="sm" onClick={() => handleTaskDelete(task._id)} className="h-6 w-6 p-0">
                                                                                     <Trash2 className="h-3 w-3" />
                                                                                 </Button>
                                                                             </div>
@@ -975,20 +700,20 @@ I've automatically assigned tasks to team members based on their skills and expe
                                     </div> */}
                                 </div>
 
-                                {viewingTask.assignedTo && (
+                                {viewingTask?.assignment?.assigned_to?.first_name && (
                                     <div>
                                         <label className="text-sm font-medium">Assigned To</label>
                                         <div className="mt-1 p-3 bg-muted rounded-lg">
                                             <div className="flex items-center space-x-3">
                                                 <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-medium flex-shrink-0">
-                                                    {viewingTask.assignedTo.name.split(' ').map(n => n[0]).join('')}
+                                                    {viewingTask?.assignment?.assigned_to?.first_name.split(' ').map(n => n[0]).join('')}
                                                 </div>
                                                 <div className="min-w-0">
-                                                    <div className="font-medium truncate">{viewingTask.assignedTo.name}</div>
-                                                    <div className="text-sm text-muted-foreground truncate">{viewingTask.assignedTo.role} • {viewingTask.assignedTo.department}</div>
+                                                    <div className="font-medium truncate">{viewingTask?.assignment?.assigned_to?.first_name}</div>
+                                                    {/* <div className="text-sm text-muted-foreground truncate">{viewingTask.assignedTo.role} • {viewingTask.assignedTo.department}</div> */}
                                                 </div>
                                             </div>
-                                            <div className="mt-2">
+                                            {/* <div className="mt-2">
                                                 <div className="text-sm font-medium">Skills:</div>
                                                 <div className="flex flex-wrap gap-1 mt-1">
                                                     {viewingTask.assignedTo.skillTags.map((skill) => (
@@ -997,7 +722,7 @@ I've automatically assigned tasks to team members based on their skills and expe
                                                         </Badge>
                                                     ))}
                                                 </div>
-                                            </div>
+                                            </div> */}
                                         </div>
                                     </div>
                                 )}
@@ -1089,22 +814,24 @@ I've automatically assigned tasks to team members based on their skills and expe
                                     </div> */}
 
                                     <div className="space-y-2">
-                                        <label className="text-sm font-medium">Priority</label>
-                                        <select
-                                            className="w-full p-2 border rounded"
+                                        <Label>Priority</Label>
+                                        <Select
                                             value={editingTask.priority}
-                                            onChange={(e) =>
-                                                setEditingTask({ ...editingTask, priority: e.target.value as "low" | "medium" | "high" })
-                                            }
+                                            onValueChange={(value) => setEditingTask({ ...editingTask, priority: value as "low" | "medium" | "high" })}
                                         >
-                                            <option value="low">Low</option>
-                                            <option value="medium">Medium</option>
-                                            <option value="high">High</option>
-                                        </select>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Select priority" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="low">Low</SelectItem>
+                                                <SelectItem value="medium">Medium</SelectItem>
+                                                <SelectItem value="high">High</SelectItem>
+                                            </SelectContent>
+                                        </Select>
                                     </div>
                                 </div>
 
-                                <div className="space-y-2">
+                                {/* <div className="space-y-2">
                                     <label className="text-sm font-medium">Assigned To</label>
                                     <select
                                         className="w-full p-2 border rounded"
@@ -1121,6 +848,52 @@ I've automatically assigned tasks to team members based on their skills and expe
                                             </option>
                                         ))}
                                     </select>
+                                </div> */}
+
+                                <div className="space-y-2">
+                                    <Label>Assign to</Label>
+                                    <Select
+                                        value={editingTask.assignedTo?._id || editingTask?.assignment?.assigned_to._id.toString() || ""}
+                                        onValueChange={(value) => {
+                                            const member = teamMembers?.find((m) => {
+                                                console.log('member', m)
+                                                return m._id === value
+                                            }) || null;
+                                            setEditingTask({ ...editingTask, assignedTo: member })
+                                        }}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select team member">
+                                                {
+                                                    editingTask?.assignedTo?.first_name ||
+                                                    editingTask?.assignment?.assigned_to?.first_name ||
+                                                    "Select team member"
+                                                }
+                                            </SelectValue>
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {loadingTeamMembers ? (
+                                                <div className="p-2 text-center text-sm text-muted-foreground">
+                                                    Loading team members...
+                                                </div>
+                                            ) : !teamMembers?.length ? (
+                                                <div className="p-2 text-center text-sm text-muted-foreground">
+                                                    No team members found
+                                                </div>
+                                            ) : (
+                                                teamMembers.map((member) => (
+                                                    <SelectItem key={member._id} value={member._id}>
+                                                        <div className="flex items-center space-x-2">
+                                                            <span>{member.first_name}</span>
+                                                            <Badge variant="outline" className="text-xs">
+                                                                {member.roles[0].name}
+                                                            </Badge>
+                                                        </div>
+                                                    </SelectItem>
+                                                ))
+                                            )}
+                                        </SelectContent>
+                                    </Select>
                                 </div>
                             </div>
 
@@ -1142,9 +915,9 @@ I've automatically assigned tasks to team members based on their skills and expe
                     <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                         <DialogHeader>
                             <DialogTitle>Approve Goal Creation</DialogTitle>
-                            <DialogDescription>
+                            {/* <DialogDescription>
                                 Review the goal and tasks before creating them in your project management system.
-                            </DialogDescription>
+                            </DialogDescription> */}
                         </DialogHeader>
 
                         {currentGoal && (
@@ -1159,10 +932,10 @@ I've automatically assigned tasks to team members based on their skills and expe
                                         <div className="font-semibold">{currentGoal.tasks.length}</div>
                                         <div className="text-muted-foreground">Tasks</div>
                                     </div>
-                                    <div className="text-center p-3 bg-muted rounded">
+                                    {/* <div className="text-center p-3 bg-muted rounded"> */}
                                         {/* <div className="font-semibold">{currentGoal.totalHours}h</div>
                                         <div className="text-muted-foreground">Total Hours</div> */}
-                                    </div>
+                                    {/* </div> */}
                                     {/* <div className="text-center p-3 bg-muted rounded">
                                         <div className="font-semibold">{currentGoal.estimatedDuration}</div>
                                         <div className="text-muted-foreground">Duration</div>
@@ -1181,7 +954,7 @@ I've automatically assigned tasks to team members based on their skills and expe
                                                     </div>
                                                     <div className="flex items-center space-x-2 flex-shrink-0">
                                                         <Badge className={getPriorityColor(task.priority)}>{task.priority}</Badge>
-                                                        <span className="text-muted-foreground truncate max-w-16 sm:max-w-24">{task.assignedTo?.name || "Unassigned"}</span>
+                                                        <span className="text-muted-foreground truncate max-w-16 sm:max-w-24">{task.assignment?.assigned_to?.first_name || "Unassigned"}</span>
                                                     </div>
                                                 </div>
                                             ))}

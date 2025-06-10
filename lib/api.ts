@@ -363,45 +363,17 @@ export const tasksApi = {
     }
   },
 
-  //   getTasksByUser: async (userId: number): Promise<Task[]> => {
-  //     const tasks = await tasksApi.getTasks()
-  //     return tasks.filter((task) => task.assignedTo?.id === userId)
-  //   },
-
-  //   getTasksByGoal: async (goalId: number): Promise<Task[]> => {
-  //     const tasks = await tasksApi.getTasks()
-  //     return tasks.filter((task) => task.goalId === goalId)
-  //   },
-
-  //   updateTaskStatus: async (taskId: number, status: Task["status"]): Promise<Task> => {
-  //     await delay(300)
-  //     const tasks = await tasksApi.getTasks()
-  //     const updated = tasks.map((task) => (task.id === taskId ? { ...task, status } : task))
-  //     localStorage.setItem("allTasks", JSON.stringify(updated))
-  //     return updated.find((task) => task.id === taskId)!
-  //   },
-
-  //   saveTasks: async (tasks: Task[]): Promise<Task[]> => {
-  //     await delay(500)
-  //     const tasksToSave = tasks.map((task) => ({
-  //       ...task,
-  //       dueDate: task.dueDate ? task.dueDate.toISOString() : null,
-  //     }))
-  //     localStorage.setItem("allTasks", JSON.stringify(tasksToSave))
-  //     return tasks
-  //   },
 }
 
 
 export const aiAssistantApi = {
   chatWithAI: async (message: { message: string; sessionId: string }): Promise<any> => {
-      console.log('Reached CHAT WITH AI')
     try {
-      const response = await fetchApi<{ data: any }>('/message', {
+      const response = await fetchApi<{ message: any }>('/message', {
         method: 'POST',
         body: JSON.stringify(message)
       });
-      return response.data.ai_goal;
+      return response.message;
     } catch (error) {
       throw error;
     }
@@ -416,6 +388,20 @@ export const aiAssistantApi = {
       throw error;
     }
   },
+
+  ApproveAIGoal: async (goal: any): Promise<any> => {
+    try {
+      const response = await fetchApi<{ data: any }>('/approve-ai-goal', {
+        method: 'POST',
+        body: JSON.stringify({ goal })
+      });
+      if (!response.data) return {};
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
 }
 
 export const aiSessionApi = {
@@ -473,4 +459,58 @@ export const aiSessionApi = {
       throw error;
     }
   },
+}
+
+
+export const AITasksApi = {
+
+
+
+  AItaskAssign: async (taskAssign: Partial<TaskAssign>): Promise<any> => {
+    try {
+      const response = await fetchApi<{ taskAssign: TaskAssign }>('/ai-assign-task', {
+        method: 'PUT',
+        body: JSON.stringify(taskAssign)
+      });
+      if (!response) return [];
+      return response
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  AIcreateTask: async (task: Partial<Task>): Promise<Task> => {
+    try {
+      const response = await fetchApi<{ task: Task }>('/ai-task', {
+        method: 'POST',
+        body: JSON.stringify({ task })
+      });
+      return response.task;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  AIupdateTask: async (taskId: string, task: Partial<Task>): Promise<Task> => {
+    try {
+      const response = await fetchApi<{ task: Task }>(`/ai-task/${taskId}`, {
+        method: 'PUT',
+        body: JSON.stringify({ task }),
+      });
+      return response.task;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  AIdeleteTask: async (taskId: string): Promise<void> => {
+    try {
+      await fetchApi<void>(`/ai-task/${taskId}`, {
+        method: 'DELETE'
+      });
+    } catch (error) {
+      throw error;
+    }
+  },
+
 }

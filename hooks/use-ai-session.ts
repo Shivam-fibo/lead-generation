@@ -19,7 +19,6 @@ export const useAiSession = (sessionId?: string, options?: {
         isSessionLoading,
         isSessionsLoading,
         loadSession,
-        sendMessage,
         createNewSession,
         loadAllSessions,
         deleteSession,
@@ -72,12 +71,11 @@ export const useAiSession = (sessionId?: string, options?: {
     const createSessionMutation = useMutation({
         mutationFn: (title?: string) => aiSessionApi.createAISession(title || "New Chat"),
         onSuccess: (newSession) => {
-            // Update sessions list in cache
+
             queryClient.setQueryData(["aiSessions"], (old: ChatSession[]) => {
                 return old ? [newSession, ...old] : [newSession]
             })
 
-            // Update store
             useSessionStore.setState(state => ({
                 sessions: [newSession, ...state.sessions],
                 currentSessionId: newSession.id,
@@ -91,37 +89,22 @@ export const useAiSession = (sessionId?: string, options?: {
 
     // Mutation for sending message
     const sendMessageMutation = useMutation({
-        mutationFn: async ({ message, sessionId: targetSessionId }: { message: string, sessionId: string }) => {
-            const response = await aiAssistantApi.chatWithAI({
-                message,
-                sessionId: targetSessionId
-            })
-            return response
-        },
-        onMutate: async ({ message, sessionId: targetSessionId }) => {
-            const ai_goal = null;
-            // useSessionStore.setState(state => {
-            //     return {
-            //         ai_goal
-            //     };
-            // });
-            return { ai_goal }
+        mutationFn: ({ message, sessionId: targetSessionId }: { message: string, sessionId: string }) => {
+            console.log('sendMessageMutation.mutationFn called:', { message, sessionId: targetSessionId });
+            return aiAssistantApi.chatWithAI({ message, sessionId: targetSessionId });
         },
         onSuccess: (aiResponse, { sessionId: targetSessionId }) => {
-            
-            // console.log('aiResponse', aiResponse)
-            
-            // useSessionStore.setState(state => ({
-            //     ai_goal: aiResponse
-            // }))
-            
-            // Invalidate session messages query to refetch from server
-            queryClient.invalidateQueries({ queryKey: ["sessionMessages", targetSessionId] })
+            console.log("checking onsuccess")
+            if (aiResponse) {
+                useSessionStore.setState(state => ({
+                    currentMessages: [...state.currentMessages, aiResponse]
+                }));
+            }
         },
         onError: (error, variables, context) => {
-            console.error('Failed to send message:', error)
+            console.error('Failed to send message:', error);
         }
-    })
+    });
 
     // Mutation for deleting session
     const deleteSessionMutation = useMutation({
@@ -173,6 +156,17 @@ export const useAiSession = (sessionId?: string, options?: {
         }
     })
 
+    const approveAiGoalMutation = useMutation({
+        mutationFn: (goal?: any) => aiAssistantApi.ApproveAIGoal(goal),
+        onSuccess: (newSession) => {
+            console.log('success fetching approve goals')
+        },
+        onError: (error) => {
+            console.error('Failed to create session:', error)
+        }
+    })
+
+
     // Helper functions that combine store actions with query invalidation
     // Updated to support your callback pattern
     const createSession = (
@@ -194,6 +188,8 @@ export const useAiSession = (sessionId?: string, options?: {
         })
     }
 
+
+
     const sendMessageToSession = (
         params: { message: string; sessionId?: string },
         options?: {
@@ -204,6 +200,11 @@ export const useAiSession = (sessionId?: string, options?: {
         const sessionToUse = params.sessionId || currentSessionId
         if (!sessionToUse) {
             throw new Error('No active session')
+        }
+
+        // Prevent duplicate mutations
+        if (sendMessageMutation.isPending) {
+            return;
         }
 
         return sendMessageMutation.mutate(
@@ -255,6 +256,26 @@ export const useAiSession = (sessionId?: string, options?: {
             }
         )
     }
+
+    const approveAiGoal = (
+        params: { goal?: any },
+        options?: {
+            onSuccess?: (data: any) => void;
+            onError?: (error: any) => void;
+        }
+    ) => {
+        const goal = params
+
+        return approveAiGoalMutation.mutate(goal, {
+            onSuccess: (data) => {
+                options?.onSuccess?.(data)
+            },
+            onError: (error) => {
+                options?.onError?.(error)
+            }
+        })
+    }
+
 
     // Async versions (for backward compatibility)
     const createSessionAsync = async (title?: string) => {
@@ -311,9 +332,10 @@ export const useAiSession = (sessionId?: string, options?: {
 
         // Actions (callback pattern - matches your system)
         createSession,
-        sendMessage: sendMessageToSession,
+        sendMessageToSession,
         deleteSession: deleteSessionById,
         updateSessionTitle: updateSessionTitleById,
+        approveAiGoal,
 
         // Async versions (for those who prefer promises)
         createSessionAsync,

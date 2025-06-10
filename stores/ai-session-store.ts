@@ -34,7 +34,7 @@ interface SessionState {
   // Actions
   createNewSession: (title?: string) => Promise<string>;
   loadSession: (sessionId: string) => Promise<void>;
-  sendMessage: (content: string) => Promise<void>;
+  // sendMessage: (content: string) => Promise<void>;
   loadAllSessions: () => Promise<void>;
   deleteSession: (sessionId: string) => Promise<void>;
   updateSessionTitle: (sessionId: string, title: string) => Promise<void>;
@@ -102,55 +102,55 @@ export const useSessionStore = create<SessionState>()(
       },
 
       // Send message in current session
-      sendMessage: async (content: string) => {
-        const { currentSessionId, currentMessages } = get();
+      // sendMessage: async (content: string) => {
+      //   const { currentSessionId, currentMessages } = get();
         
-        if (!currentSessionId) {
-          throw new Error('No active session');
-        }
+      //   if (!currentSessionId) {
+      //     throw new Error('No active session');
+      //   }
 
-        try {
-          set({ isLoading: true });
+      //   try {
+      //     set({ isLoading: true });
 
-          // Add user message optimistically
-          const userMessage: ChatMessage = {
-            id: Date.now().toString(),
-            content,
-            role: 'user',
-            timestamp: new Date().toISOString(),
-            sessionId: currentSessionId
-          };
+      //     // Add user message optimistically
+      //     const userMessage: ChatMessage = {
+      //       id: Date.now().toString(),
+      //       content,
+      //       role: 'user',
+      //       timestamp: new Date().toISOString(),
+      //       sessionId: currentSessionId
+      //     };
 
-          set({ 
-            currentMessages: [...currentMessages, userMessage]
-          });
+      //     set({ 
+      //       currentMessages: [...currentMessages, userMessage]
+      //     });
 
-          // Send to backend
-          const response = await aiAssistantApi.chatWithAI({
-            message: content,
-            sessionId: currentSessionId
-          });
+      //     // Send to backend
+      //     // const response = await aiAssistantApi.chatWithAI({
+      //     //   message: content,
+      //     //   sessionId: currentSessionId
+      //     // });
 
-          // Add AI response
-          const aiMessage: ChatMessage = {
-            id: response.id,
-            content: response.content,
-            role: 'assistant',
-            timestamp: response.timestamp,
-            sessionId: currentSessionId
-          };
+      //     // Add AI response
+      //     // const aiMessage: ChatMessage = {
+      //     //   id: response.id,
+      //     //   content: response.content,
+      //     //   role: 'assistant',
+      //     //   timestamp: response.timestamp,
+      //     //   sessionId: currentSessionId
+      //     // };
 
-          set({ 
-            currentMessages: [...get().currentMessages, aiMessage],
-            isLoading: false 
-          });
+      //     set({ 
+      //       // currentMessages: [...get().currentMessages, aiMessage],
+      //       isLoading: false 
+      //     });
 
-        } catch (error) {
-          console.error('Failed to send message:', error);
-          set({ isLoading: false });
-          throw error;
-        }
-      },
+      //   } catch (error) {
+      //     console.error('Failed to send message:', error);
+      //     set({ isLoading: false });
+      //     throw error;
+      //   }
+      // },
 
       // Load all user sessions
       loadAllSessions: async () => {
