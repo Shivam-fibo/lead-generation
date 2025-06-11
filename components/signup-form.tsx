@@ -79,10 +79,10 @@ export default function SignUpForm() {
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
             <Target className="h-4 w-4" />
           </div>
-          <h1 className="text-2xl font-bold">TaskFlow</h1>
+          <h1 className="text-2xl font-bold">PhlexiLeads</h1>
         </div>
         <h1 className="text-3xl font-bold">Sign Up</h1>
-        <p className="text-balance text-muted-foreground">Create your account to get started with TaskFlow</p>
+        <p className="text-balance text-muted-foreground">Create your account to get started with PhlexiLeads</p>
       </div>
       <div className="grid gap-4">
         <form onSubmit={handleSignUp} className="grid gap-4">

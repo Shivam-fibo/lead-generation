@@ -29,7 +29,7 @@ interface AddTeamMember {
   password: string;
 }
 
-export default function TeamManagement() {
+export default function LeadManagement() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuthStore()
   const {
     members: apiMembers,

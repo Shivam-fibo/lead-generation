@@ -80,10 +80,10 @@ export default function LoginForm() {
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
             <Target className="h-4 w-4" />
           </div>
-          <h1 className="text-2xl font-bold">TaskFlow</h1>
+          <h1 className="text-2xl font-bold">PhlexiLeads</h1>
         </div>
         <h1 className="text-3xl font-bold">Login</h1>
-        <p className="text-balance text-muted-foreground">Enter your email below to login to your account</p>
+        {/* <p className="text-balance text-muted-foreground">Enter your email below to login to your account</p> */}
       </div>
       <div className="grid gap-4">
         <form onSubmit={handleLogin} className="grid gap-4">
@@ -132,19 +132,20 @@ export default function LoginForm() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-2">
-          <Button variant="outline" size="sm" onClick={() => handleQuickLogin("CEO")} disabled={isLoading}>
+        {/* <div className="grid grid-cols-2 gap-2"> */}
+        <div className="flex justify-center items-center">
+          {/* <Button variant="outline" size="sm" onClick={() => handleQuickLogin("CEO")} disabled={isLoading}>
             CEO Demo
-          </Button>
+          </Button> */}
           <Button variant="outline" size="sm" onClick={() => handleQuickLogin("Admin")} disabled={isLoading}>
-            Admin Demo
+            Quick Login
           </Button>
-          <Button variant="outline" size="sm" onClick={() => handleQuickLogin("Team Leader")} disabled={isLoading}>
+          {/* <Button variant="outline" size="sm" onClick={() => handleQuickLogin("Team Leader")} disabled={isLoading}>
             Leader Demo
           </Button>
           <Button variant="outline" size="sm" onClick={() => handleQuickLogin("Team Member")} disabled={isLoading}>
             Member Demo
-          </Button>
+          </Button> */}
         </div>
       </div>
       <div className="mt-4 text-center text-sm">
@@ -154,7 +155,7 @@ export default function LoginForm() {
         </Link>
       </div>
 
-      <Card className="mt-4">
+      {/* <Card className="mt-4">
         <CardHeader className="pb-3">
           <CardTitle className="text-sm">Demo Credentials</CardTitle>
         </CardHeader>
@@ -172,7 +173,7 @@ export default function LoginForm() {
             <strong>Team Member:</strong> danny_phlexi@yopmail.com / danny_phlexi
           </p>
         </CardContent>
-      </Card>
+      </Card> */}
     </div>
   )
 }

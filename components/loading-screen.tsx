@@ -16,7 +16,7 @@ export function LoadingScreen() {
               <div className="absolute inset-0 rounded-lg bg-primary/20 animate-ping"></div>
             </div>
             <div className="text-center space-y-2">
-              <h3 className="text-lg font-semibold">TaskFlow</h3>
+              <h3 className="text-lg font-semibold">PhlexiLeads</h3>
               <p className="text-sm text-muted-foreground">Loading your workspace...</p>
             </div>
             <div className="w-full bg-muted rounded-full h-2">

@@ -10,9 +10,8 @@ import { QueryProvider } from "@/providers/query-provider"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "TaskFlow - Internal Delegation Platform",
-  description: "Streamline your team's workflow with AI-powered task delegation",
-    generator: 'v0.dev'
+  title: "PhlexiLeads - Lead management Platform",
+  description: ""
 }
 
 export default function RootLayout({

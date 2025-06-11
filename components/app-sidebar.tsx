@@ -18,7 +18,7 @@ import {
 } from "lucide-react"
 import { useTheme } from "next-themes"
 import { useAuth } from "@/hooks/use-auth"
-import { useAiSession } from "@/hooks/use-ai-session"
+// import { useAiSession } from "@/hooks/use-ai-session"
 
 import {
   Sidebar,
@@ -48,33 +48,15 @@ const data = {
       items: [],
     },
     {
-      title: "AI Assistant",
-      url: "/chat",
-      icon: Bot,
-      items: [],
-    },
-    {
-      title: "Team Management",
-      url: "/team",
+      title: "Leads",
+      url: "/leads",
       icon: Users,
       items: [],
     },
     {
-      title: "Goals & Tasks",
-      url: "/goals",
-      icon: Target,
-      items: [],
-    },
-    {
-      title: "My Tasks",
-      url: "/my-tasks",
-      icon: FileText,
-      items: [],
-    },
-    {
-      title: "Progress Monitor",
-      url: "/progress",
-      icon: BarChart3,
+      title: "Site Visits",
+      url: "/site-visits",
+      icon: Users,
       items: [],
     },
   ],
@@ -85,26 +67,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const router = useRouter()
   const pathname = usePathname()
   const { theme, setTheme } = useTheme()
-  const { createSession } = useAiSession(undefined, {
-    enableQueries: false
-  })
+
 
   const handleLogout = () => {
     logout(undefined, {
       onSuccess: () => router.push("/")
     })
-  }
-
-  const handleAIClick = (e: React.MouseEvent) => {
-    e.preventDefault()
-    createSession(
-      { title: "New AI Chat" },
-      {
-        onSuccess: (newSession) => {
-          router.push(`/chat/${newSession._id}`)
-        }
-      }
-    )
   }
 
   const isNavItemActive = (itemUrl: string) => {
@@ -145,8 +113,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   <Target className="size-4" />
                 </div>
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold">TaskFlow</span>
-                  <span className="truncate text-xs">Delegation Platform</span>
+                  <span className="truncate font-semibold">PhlexiLeads</span>
+                  <span className="truncate text-xs">Lead Management Platform</span>
                 </div>
               </a>
             </SidebarMenuButton>
@@ -161,17 +129,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               {filteredNavMain.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild isActive={isNavItemActive(item.url)}>
-                    {item.url === "/chat" ? (
-                      <a href="#" onClick={handleAIClick}>
-                        <item.icon />
-                        <span>{item.title}</span>
-                      </a>
-                    ) : (
                       <a href={item.url}>
                         <item.icon />
                         <span>{item.title}</span>
                       </a>
-                    )}
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
