@@ -152,9 +152,11 @@ export default function AIAssistant() {
         currentSession,
         isSessionLoading,
         sendMessageToSession,
-        approveAiGoal
+        approveAiGoal,
+        sessions,
+        refreshSessions 
     } = useAiSession(sessionId, {
-        enableQueries: false
+        enableQueries: true
     })
 
     const {
@@ -251,19 +253,7 @@ export default function AIAssistant() {
     }
 
     const loadSession = (sessionId: string) => {
-        const session = chatSessions.find(s => s.id === sessionId)
-        if (session) {
-            setCurrentSessionId(sessionId)
-            setMessages(session.messages)
-
-            // Find the last goal in the session
-            const lastGoalMessage = [...session.messages].reverse().find(msg => msg.goal)
-            if (lastGoalMessage?.goal) {
-                setCurrentGoal(lastGoalMessage.goal)
-            } else {
-                setCurrentGoal(null)
-            }
-        }
+        router.push(`/chat/${sessionId}`)
     }
 
     const findBestTeamMember = (skills: string[]): TeamMember | null => {
@@ -494,14 +484,14 @@ export default function AIAssistant() {
                                             >
                                                 Goals & Tasks
                                             </Button>
-                                            {/* <Button
+                                            <Button
                                                 variant={sidebarTab === "history" ? "default" : "outline"}
                                                 size="sm"
                                                 onClick={() => setSidebarTab("history")}
                                                 className="text-xs px-2"
                                             >
                                                 History
-                                            </Button> */}
+                                            </Button>
                                         </div>
                                     )}
                                     <Button
@@ -624,43 +614,53 @@ export default function AIAssistant() {
                                         <div className="space-y-4 h-full flex flex-col">
                                             <div className="flex items-center justify-between flex-shrink-0">
                                                 <h4 className="font-medium text-sm">Chat History</h4>
-                                                <Button variant="outline" size="sm" onClick={startNewSession} className="text-xs px-2">
-                                                    <span className="hidden sm:inline">New Chat</span>
-                                                    <span className="sm:hidden">New</span>
-                                                </Button>
                                             </div>
 
                                             <div className="flex-1 min-h-0 overflow-hidden">
                                                 <ScrollArea className="h-full">
                                                     <div className="space-y-2 pr-2 sm:pr-4">
-                                                        {chatSessions.map((session) => (
-                                                            <div
-                                                                key={session.id}
-                                                                className={`p-2 sm:p-3 rounded-lg border cursor-pointer transition-colors ${session.id === currentSessionId
-                                                                    ? "bg-primary/10 border-primary"
-                                                                    : "hover:bg-muted"
-                                                                    }`}
-                                                                onClick={() => loadSession(session.id)}
-                                                            >
-                                                                <div className="flex items-start justify-between">
-                                                                    <div className="flex-1 min-w-0">
-                                                                        <h5 className="font-medium text-xs sm:text-sm truncate">{session.title}</h5>
-                                                                        <div className="flex items-center space-x-1 sm:space-x-2 text-xs text-muted-foreground mt-1">
-                                                                            <Calendar className="h-3 w-3 flex-shrink-0" />
-                                                                            <span className="truncate">{session.createdAt.toLocaleDateString()}</span>
-                                                                            <Clock className="h-3 w-3 flex-shrink-0" />
-                                                                            <span className="truncate">{session.lastActivity.toLocaleTimeString()}</span>
-                                                                        </div>
-                                                                        <p className="text-xs text-muted-foreground mt-1">
+                                                        {sessions.map((session) => {
+                                                            const dateCreatedAt = new Date(session?.createdAt)
+                                                            const formattedDate = dateCreatedAt.toLocaleDateString('en-US', {
+                                                                month: 'short',
+                                                                day: 'numeric',
+                                                                year: 'numeric'
+                                                            })
+                                                            const formattedTime = dateCreatedAt.toLocaleTimeString('en-US', {
+                                                                hour: '2-digit',
+                                                                minute: '2-digit',
+                                                                hour12: true
+                                                            })
+
+                                                            return (
+                                                                <div
+                                                                    key={session._id}
+                                                                    className={`p-2 sm:p-3 rounded-lg border cursor-pointer transition-colors ${session.id === currentSessionId
+                                                                        ? "bg-primary/10 border-primary"
+                                                                        : "hover:bg-muted"
+                                                                        }`}
+                                                                    onClick={() => loadSession(session._id)}
+                                                                >
+                                                                    <div className="flex items-start justify-between">
+                                                                        <div className="flex-1 min-w-0">
+                                                                            <h5 className="font-medium text-xs sm:text-sm truncate">{session.title}</h5>
+                                                                            <div className="flex items-center space-x-1 sm:space-x-2 text-xs text-muted-foreground mt-1">
+                                                                                <Calendar className="h-3 w-3 flex-shrink-0" />
+                                                                                <span className="truncate">{formattedDate}</span>
+
+                                                                                <span className="truncate">{formattedTime}</span>
+                                                                                <Clock className="h-3 w-3 flex-shrink-0" />
+                                                                            </div>
+                                                                            {/* <p className="text-xs text-muted-foreground mt-1">
                                                                             {session.messages.length} messages
-                                                                        </p>
+                                                                        </p> */}
+                                                                        </div>
+                                                                        {session.id === currentSessionId && (
+                                                                            <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0"></div>
+                                                                        )}
                                                                     </div>
-                                                                    {session.id === currentSessionId && (
-                                                                        <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0"></div>
-                                                                    )}
-                                                                </div>
-                                                            </div>
-                                                        ))}
+                                                                </div>)
+                                                        })}
                                                     </div>
                                                 </ScrollArea>
                                             </div>
@@ -933,7 +933,7 @@ export default function AIAssistant() {
                                         <div className="text-muted-foreground">Tasks</div>
                                     </div>
                                     {/* <div className="text-center p-3 bg-muted rounded"> */}
-                                        {/* <div className="font-semibold">{currentGoal.totalHours}h</div>
+                                    {/* <div className="font-semibold">{currentGoal.totalHours}h</div>
                                         <div className="text-muted-foreground">Total Hours</div> */}
                                     {/* </div> */}
                                     {/* <div className="text-center p-3 bg-muted rounded">

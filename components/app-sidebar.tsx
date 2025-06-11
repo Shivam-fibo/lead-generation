@@ -18,6 +18,7 @@ import {
 } from "lucide-react"
 import { useTheme } from "next-themes"
 import { useAuth } from "@/hooks/use-auth"
+import { useAiSession } from "@/hooks/use-ai-session"
 
 import {
   Sidebar,
@@ -84,11 +85,26 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const router = useRouter()
   const pathname = usePathname()
   const { theme, setTheme } = useTheme()
+  const { createSession } = useAiSession(undefined, {
+    enableQueries: false
+  })
 
   const handleLogout = () => {
     logout(undefined, {
       onSuccess: () => router.push("/")
     })
+  }
+
+  const handleAIClick = (e: React.MouseEvent) => {
+    e.preventDefault()
+    createSession(
+      { title: "New AI Chat" },
+      {
+        onSuccess: (newSession) => {
+          router.push(`/chat/${newSession._id}`)
+        }
+      }
+    )
   }
 
   const isNavItemActive = (itemUrl: string) => {
@@ -145,10 +161,17 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               {filteredNavMain.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild isActive={isNavItemActive(item.url)}>
-                    <a href={item.url}>
-                      <item.icon />
-                      <span>{item.title}</span>
-                    </a>
+                    {item.url === "/chat" ? (
+                      <a href="#" onClick={handleAIClick}>
+                        <item.icon />
+                        <span>{item.title}</span>
+                      </a>
+                    ) : (
+                      <a href={item.url}>
+                        <item.icon />
+                        <span>{item.title}</span>
+                      </a>
+                    )}
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}

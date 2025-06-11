@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect } from "react"
+import React, { useEffect, useLayoutEffect } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useSessionStore } from "@/stores/ai-session-store"
 import { aiAssistantApi, aiSessionApi, type ChatMessage, type ChatSession } from "@/lib/api"
@@ -35,8 +35,11 @@ export const useAiSession = (sessionId?: string, options?: {
     } = useQuery({
         queryKey: ["aiSessions"],
         queryFn: () => aiSessionApi.getAllSessions(),
-        staleTime: 5 * 60 * 1000, // 5 minutes
+        staleTime: 5 * 60 * 1000, 
         enabled: enableQueries,
+
+        refetchOnMount: true,
+        refetchOnWindowFocus: false,
     })
 
     // Query for specific session messages (only if sessionId is provided)
@@ -49,7 +52,7 @@ export const useAiSession = (sessionId?: string, options?: {
         queryKey: ["sessionMessages", sessionId],
         queryFn: () => sessionId ? aiSessionApi.getSession(sessionId) : Promise.resolve([]),
         enabled: !!sessionId,
-        staleTime: 1 * 60 * 1000, // 1 minute
+        staleTime: 1 * 60 * 1000, 
     })
 
     useEffect(() => {
