@@ -1,6 +1,6 @@
 // API Configuration
-// const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_LOCAL_URL
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_LOCAL_URL
+// const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
 
 
 const buildUrl = (endpoint: string) => `${API_BASE_URL}${endpoint}`
@@ -419,10 +419,9 @@ export const aiSessionApi = {
     }
   },
 
-  // Get all sessions for current user
   getAllSessions: async (): Promise<any[]> => {
     try {
-      const response = await fetchApi<{ sessions: any[] }>('/sessions');
+      const response = await fetchApi<{ sessions: any[] }>('/get-session-list');
       return response.sessions || [];
     } catch (error) {
       throw error;
