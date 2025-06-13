@@ -1,7 +1,7 @@
 "use client"
 
 import { Card, CardContent } from "@/components/ui/card"
-import { Target } from "lucide-react"
+import { Crosshair, Goal } from "lucide-react"
 
 export function LoadingScreen() {
   return (
@@ -11,13 +11,13 @@ export function LoadingScreen() {
           <div className="flex flex-col items-center space-y-4">
             <div className="relative">
               <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary text-primary-foreground animate-pulse">
-                <Target className="h-6 w-6" />
+                <Goal className="h-6 w-6" />
               </div>
               <div className="absolute inset-0 rounded-lg bg-primary/20 animate-ping"></div>
             </div>
             <div className="text-center space-y-2">
               <h3 className="text-lg font-semibold">PhlexiLeads</h3>
-              <p className="text-sm text-muted-foreground">Loading your workspace...</p>
+              <p className="text-sm text-muted-foreground">Initializing your workspace...</p>
             </div>
             <div className="w-full bg-muted rounded-full h-2">
               <div className="bg-primary h-2 rounded-full animate-pulse" style={{ width: "60%" }}></div>

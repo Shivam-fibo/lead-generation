@@ -9,7 +9,7 @@ import DashboardLayout from "@/components/dashboard-layout"
 import { LoadingScreen, TeamSkeleton } from "@/components/loading-screen"
 import TeamMemberForm from "@/components/team-member-form"
 import TeamMemberEditForm from "@/components/team-member-edit-form"
-import LeadsList from "@/components/leads-list"
+import TeamMemberList from "@/components/team-member-list"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -141,17 +141,17 @@ export default function LeadManagement() {
         <div className="space-y-6">
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Lead Management</h1>
-              <p className="text-gray-600 dark:text-gray-400">Manage and track all your leads</p>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Team Management</h1>
+              <p className="text-gray-600 dark:text-gray-400">Manage your team members, roles, and skills</p>
             </div>
             <div className="flex space-x-2">
               <Button variant="outline" onClick={() => document.getElementById("csv-upload")?.click()}>
                 <Upload className="mr-2 h-4 w-4" />
-                Export CSV
+                Import CSV
               </Button>
               <Button onClick={() => setShowForm(true)}>
                 <Plus className="mr-2 h-4 w-4" />
-                Add Lead
+                Add Member
               </Button>
             </div>
           </div>
@@ -198,7 +198,7 @@ export default function LeadManagement() {
                 </Card>
               )}
 
-              <LeadsList
+              <TeamMemberList
                 members={members}
                 onEdit={(member) => {
                   setEditingMember(member)

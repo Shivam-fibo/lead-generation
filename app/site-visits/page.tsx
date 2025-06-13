@@ -141,8 +141,8 @@ export default function LeadManagement() {
         <div className="space-y-6">
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Lead Management</h1>
-              <p className="text-gray-600 dark:text-gray-400">Manage and track all your leads</p>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Site Visits</h1>
+              <p className="text-gray-600 dark:text-gray-400">Manage all scheduled site visits and meetings</p>
             </div>
             <div className="flex space-x-2">
               <Button variant="outline" onClick={() => document.getElementById("csv-upload")?.click()}>
