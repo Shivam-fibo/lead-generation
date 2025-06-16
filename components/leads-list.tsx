@@ -29,7 +29,8 @@ import {
   X,
   Flame,
   CheckCircle,
-  ChevronDown
+  ChevronDown,
+  LucideSnowflake
 } from "lucide-react"
 
 import {
@@ -50,7 +51,7 @@ interface Lead {
   email: string;
   phone: string;
   status: string;
-  IsReached: boolean;
+  HasReached: boolean;
   createdAt: string;
   needsImmediateCall: boolean;
   requirement?: string;
@@ -68,8 +69,8 @@ const mockLeads = [
     email: "sarah@company.com",
     phone: "+91 9123867523",
     status: "Hot",
-    IsReached: true,
-    createdAt: "2024-06-10",
+    HasReached: true,
+    createdAt: "2025-06-04T13:17:51.857+00:00",
     needsImmediateCall: true,
     requirement: "4BHK",
     callStatus: "completed",
@@ -84,7 +85,7 @@ const mockLeads = [
     email: "m.chen@tech.com",
     phone: "+91 7789867523",
     status: "Cold",
-    IsReached: false,
+    HasReached: false,
     createdAt: "2024-06-09",
     needsImmediateCall: false,
     requirement: "2BHK",
@@ -100,7 +101,7 @@ const mockLeads = [
     email: "emma.davis@startup.io",
     phone: "+91 7564867523",
     status: "Cold",
-    IsReached: true,
+    HasReached: true,
     createdAt: "2024-06-08",
     needsImmediateCall: false,
     requirement: "3BHK",
@@ -116,7 +117,7 @@ const mockLeads = [
     email: "james.w@enterprise.com",
     phone: "+91 9753867523",
     status: "Hot",
-    IsReached: false,
+    HasReached: false,
     createdAt: "2024-06-07",
     needsImmediateCall: true,
     requirement: "5BHK",
@@ -132,7 +133,7 @@ const mockLeads = [
     email: "l.anderson@company.net",
     phone: "+91 8425867523",
     status: "Cold",
-    IsReached: true,
+    HasReached: true,
     createdAt: "2024-06-06",
     needsImmediateCall: false,
     requirement: "2BHK",
@@ -145,7 +146,7 @@ const mockLeads = [
 ]
 
 
-export default function LeadsList({ members, onEdit, onDelete }: any) {
+export default function LeadsList({ leads, onEdit, onDelete }: any) {
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null)
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
@@ -171,20 +172,25 @@ export default function LeadsList({ members, onEdit, onDelete }: any) {
     }
 
     return (
-      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium transition-colors ${getStatusStyle(status)}`}>
+      <span className={`inline-flex items-center  px-2.5 py-0.5 rounded-full text-xs font-medium transition-colors ${getStatusStyle(status)}`}>
+        {status === "Hot" ?
+          <Flame className="h-3.5 w-3.5 mr-0.5" />
+          :
+          <LucideSnowflake className="h-3.5 w-3.5 mr-0.5" />
+        }
         {status}
       </span>
     )
   }
 
-  const ReachedBadge = ({ isReached }: { isReached: boolean }) => {
-    const style = isReached
+  const ReachedBadge = ({ HasReached }: { HasReached: boolean }) => {
+    const style = HasReached
       ? "bg-green-50 text-green-700 border border-green-200 hover:bg-green-100"
       : "bg-gray-50 text-gray-600 border border-gray-200 hover:bg-gray-100"
 
     return (
       <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium transition-colors ${style}`}>
-        {isReached ? (
+        {HasReached ? (
           <>
             <Locate className="h-3 w-3" />
             Reached
@@ -214,12 +220,11 @@ export default function LeadsList({ members, onEdit, onDelete }: any) {
       )
     }
   }
-
   return (
     <>
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Total Leads ({members.length})</CardTitle>
+          <CardTitle>Total Leads ({mockLeads.length})</CardTitle>
           <div className="flex items-center space-x-2">
             <Search className="h-4 w-4 text-gray-400" />
             <Input
@@ -237,37 +242,46 @@ export default function LeadsList({ members, onEdit, onDelete }: any) {
                 <TableRow>
                   <TableHead>Name</TableHead>
                   <TableHead>Contact</TableHead>
-                  <TableHead>Email</TableHead>
+                  {/* <TableHead>Email</TableHead> */}
                   <TableHead>Status</TableHead>
                   <TableHead>Call Priority</TableHead>
-                  <TableHead>IsReached</TableHead>
+                  <TableHead>Has Reached</TableHead>
                   <TableHead>CreatedAt</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {mockLeads.map((lead) => (
-                  <TableRow key={lead.id}>
-                    <TableCell className="font-medium">{lead.name}</TableCell>
-                    <TableCell className="font-medium">{lead.phone}</TableCell>
-                    <TableCell>{lead.email}</TableCell>
-                    <TableCell>
+                  <TableRow key={lead.id} >
+                    <TableCell className="font-medium" onClick={() => handleViewLead(lead)}>{lead.name}</TableCell>
+                    <TableCell className="font-medium" onClick={() => handleViewLead(lead)}>{lead.phone}</TableCell>
+                    {/* <TableCell>{lead.email}</TableCell> */}
+                    <TableCell onClick={() => handleViewLead(lead)}>
                       <StatusBadge status={lead.status} />
                     </TableCell>
-                    <TableCell>
+                    <TableCell onClick={() => handleViewLead(lead)}>
                       <CallImmediatelyBadge needsCall={lead.needsImmediateCall} />
                     </TableCell>
-                    <TableCell>
-                      <ReachedBadge isReached={lead.IsReached} />
+                    <TableCell onClick={() => handleViewLead(lead)}>
+                      <ReachedBadge HasReached={lead.HasReached} />
                     </TableCell>
-                    <TableCell>{lead.createdAt}</TableCell>
+                    <TableCell onClick={() => handleViewLead(lead)}>
+                      {new Date(lead.createdAt).toLocaleString('en-IN', {
+                        timeZone: 'Asia/Kolkata',
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric',
+                        hour: 'numeric',
+                        minute: '2-digit',
+                        hour12: true
+                      })}
+                    </TableCell>
                     <TableCell>
                       <div className="flex space-x-2">
-                        {/* <Button variant="outline" size="sm" onClick={() => onEdit(lead)}> */}
                         <Button variant="outline" size="sm" onClick={() => handleViewLead(lead)}>
                           <Eye className="h-4 w-4" />
                         </Button>
-                        <Button variant="outline" size="sm">
+                        <Button variant="outline" size="sm" onClick={() => onEdit(lead)}>
                           <Edit className="h-4 w-4" />
                         </Button>
                         <AlertDialog>
@@ -285,8 +299,8 @@ export default function LeadsList({ members, onEdit, onDelete }: any) {
                             </AlertDialogHeader>
                             <AlertDialogFooter>
                               <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              {/* <AlertDialogAction onClick={() => onDelete(lead._id)}>Delete</AlertDialogAction> */}
-                              <AlertDialogAction>Delete</AlertDialogAction>
+                              <AlertDialogAction onClick={() => onDelete(lead.id)}>Delete</AlertDialogAction>
+                              {/* <AlertDialogAction>Delete</AlertDialogAction> */}
                             </AlertDialogFooter>
                           </AlertDialogContent>
                         </AlertDialog>
@@ -306,7 +320,7 @@ export default function LeadsList({ members, onEdit, onDelete }: any) {
             <div className="flex items-center justify-between">
               <SheetTitle className="text-2xl font-bold">{selectedLead?.name}</SheetTitle>
             </div>
-{/* 
+            {/* 
             {selectedLead && (
               <div className="flex flex-col items-start gap-4 text-sm text-gray-600 pt-2">
                 
@@ -329,21 +343,20 @@ export default function LeadsList({ members, onEdit, onDelete }: any) {
 
           {selectedLead && (
             <div className="py-6 space-y-6">
-
-              {selectedLead.status === "Hot" && <Card className="bg-yellow-50 border-yellow-200">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-md font-semibold text-yellow-800 flex items-center gap-2">
-                    <Flame className="h-5 w-5" />
-                    WHY IMMEDIATE FOLLOW UP?
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  <p className="text-sm text-gray-700 leading-relaxed">
-                    {selectedLead.followUpReason}
-                  </p>
-                </CardContent>
-              </Card>}
-
+              {selectedLead.status === "Hot" &&
+                <Card className="bg-yellow-50 border-yellow-200">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-md font-semibold text-yellow-800 flex items-center gap-2">
+                      <Flame className="h-5 w-5" />
+                      WHY IMMEDIATE FOLLOW UP?
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <p className="text-sm text-gray-700 leading-relaxed">
+                      {selectedLead.followUpReason}
+                    </p>
+                  </CardContent>
+                </Card>}
               {/* Lead Information Section */}
               <Card>
                 <CardHeader className="pb-3">
@@ -409,11 +422,12 @@ export default function LeadsList({ members, onEdit, onDelete }: any) {
 
               {/* Conversation History Section */}
               <Card>
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-md font-semibold">Conversation History</CardTitle>
-                    <ChevronDown className="h-4 w-4 text-gray-400" />
-                  </div>
+                {/* <CardHeader className="pb-3"> */}
+                <CardHeader className="pb-0">
+                  {/* <div className="flex items-center justify-between"> */}
+                    {/* <CardTitle className="text-md font-semibold">Conversation History</CardTitle>
+                    <ChevronDown className="h-4 w-4 text-gray-400" /> */}
+                  {/* </div> */}
                 </CardHeader>
                 <CardContent>
                   <div className="text-sm text-gray-500">

@@ -13,11 +13,12 @@ import LeadsList from "@/components/leads-list"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Plus, Upload } from "lucide-react"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Pen, Plus, Upload } from "lucide-react"
 import { useAuthStore } from "@/stores/auth-store"
 import { useTeamStore } from "@/stores/team-store"
 import { useTeam } from "@/hooks/use-team"
-
+import LeadForm, { Lead } from "@/components/lead-form"
 
 interface AddTeamMember {
   username: string;
@@ -45,11 +46,12 @@ export default function LeadManagement() {
 
   const members = apiMembers
 
-  const [showForm, setShowForm] = useState(false)
-  const [editingMember, setEditingMember] = useState<TeamMember | null>(null)
+  const [showAddDialog, setShowAddDialog] = useState(false)
+  const [showEditDialog, setShowEditDialog] = useState(false)
+  const [editingLead, setEditingLead] = useState<TeamMember | null>(null)
   const router = useRouter()
 
-  console.log('editingMember:', editingMember)
+  console.log('editingLead:', editingLead)
 
   useEffect(() => {
     if (!authLoading) {
@@ -67,21 +69,27 @@ export default function LeadManagement() {
     }
   }, [authLoading, router, user, isAuthenticated])
 
-  const handleAddMember = (memberData: Omit<TeamMember, "_id">) => {
-    addTeamMember(memberData);
-    setShowForm(false);
+  const handleAddLead = (memberData: Omit<TeamMember, "_id">) => {
+    // addTeamMember(memberData);
+    setShowAddDialog(false);
   }
 
-  const handleEditMember = (memberData: Partial<TeamMember>) => {
-    if (!editingMember?._id) return;
-    updateTeamMember(editingMember._id, memberData);
-    setEditingMember(null);
-    setShowForm(false);
+  const handleEditLead = (memberData: Partial<TeamMember>) => {
+    if (!editingLead?._id) return;
+    updateTeamMember(editingLead._id, memberData);
+    setEditingLead(null);
+    setShowEditDialog(false);
   }
 
-  const handleDeleteMember = (id: string) => {
+  const handleDeleteLead = (id: string) => {
     deleteTeamMember(id)
   }
+
+  const handleEditClick = (member: TeamMember) => {
+    setEditingLead(member)
+    setShowEditDialog(true)
+  }
+
   const handleCSVUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (!file) return
@@ -129,142 +137,90 @@ export default function LeadManagement() {
     reader.readAsText(file)
   }
 
-  if (!user) {
-    return <LoadingScreen />
-  }
-
   return (
     <DashboardLayout>
-      {teamLoading ? (
-        <TeamSkeleton />
-      ) : (
-        <div className="space-y-6">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Lead Management</h1>
-              <p className="text-gray-600 dark:text-gray-400">Manage and track all your leads</p>
-            </div>
-            <div className="flex space-x-2">
-              <Button variant="outline" onClick={() => document.getElementById("csv-upload")?.click()}>
-                <Upload className="mr-2 h-4 w-4" />
-                Export CSV
-              </Button>
-              <Button onClick={() => setShowForm(true)}>
-                <Plus className="mr-2 h-4 w-4" />
-                Add Lead
-              </Button>
-            </div>
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Lead Management</h1>
+            <p className="text-gray-600 dark:text-gray-400">Manage and track all your leads</p>
           </div>
-
-          <input id="csv-upload" type="file" accept=".csv" onChange={handleCSVUpload} className="hidden" />
-
-          <Tabs defaultValue="list" className="space-y-4">
-            {/* <TabsList>
-              <TabsTrigger value="list">Team List</TabsTrigger>
-              <TabsTrigger value="stats">Statistics</TabsTrigger>
-            </TabsList> */}
-
-            <TabsContent value="list" className="space-y-4">
-              {showForm && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>{editingMember ? "Edit Team Member" : "Add New Team Member"}</CardTitle>
-                    <CardDescription>
-                      {editingMember
-                        ? "Update the team member information below"
-                        : "Fill in the details to add a new team member"}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    {editingMember ? (
-                      <TeamMemberEditForm
-                        initialData={editingMember}
-                        onSubmit={handleEditMember}
-                        onCancel={() => {
-                          setShowForm(false)
-                          setEditingMember(null)
-                        }}
-                      />
-                    ) : (
-                      <TeamMemberForm
-                        onSubmit={handleAddMember}
-                        onCancel={() => {
-                          setShowForm(false)
-                          setEditingMember(null)
-                        }}
-                      />
-                    )}
-                  </CardContent>
-                </Card>
-              )}
-
-              <LeadsList
-                members={members}
-                onEdit={(member) => {
-                  setEditingMember(member)
-                  setShowForm(true)
-                }}
-                onDelete={handleDeleteMember}
-              />
-            </TabsContent>
-
-            {/* <TabsContent value="stats" className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Total Members</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-3xl font-bold">{members.length}</div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Departments</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-3xl font-bold">{new Set(members.map((m) => m.department)).size}</div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Unique Skills</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-3xl font-bold">{new Set(members.flatMap((m) => m.skillTags)).size}</div>
-                  </CardContent>
-                </Card>
-              </div>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Department Breakdown</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    {Object.entries(
-                      members.reduce(
-                        (acc, member) => {
-                          acc[member.department] = (acc[member.department] || 0) + 1
-                          return acc
-                        },
-                        {} as Record<string, number>,
-                      ),
-                    ).map(([department, count]) => (
-                      <div key={department} className="flex justify-between">
-                        <span>{department}</span>
-                        <span className="font-medium">{count}</span>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent> */}
-          </Tabs>
+          <div className="flex space-x-2">
+            <Button variant="outline" onClick={() => document.getElementById("csv-upload")?.click()}>
+              <Upload className="mr-2 h-4 w-4" />
+              Export CSV
+            </Button>
+            <Button onClick={() => setShowAddDialog(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Lead
+            </Button>
+          </div>
         </div>
-      )}
+
+        <input id="csv-upload" type="file" accept=".csv" onChange={handleCSVUpload} className="hidden" />
+
+        <Tabs defaultValue="list" className="space-y-4">
+          <TabsContent value="list" className="space-y-4">
+            <LeadsList
+              leads={members}
+              onEdit={handleEditClick}
+              onDelete={handleDeleteLead}
+            />
+          </TabsContent>
+        </Tabs>
+
+        {/* Add Lead Dialog */}
+        <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center space-x-2">
+                <Plus className="h-4 w-4" />
+                <span>Add New Lead</span>
+              </DialogTitle>
+              {/* <DialogDescription>
+                Fill in the details to add a new lead to your system
+              </DialogDescription> */}
+            </DialogHeader>
+
+            <div className="mt-4">
+              <LeadForm
+                onSubmit={handleAddLead}
+                onCancel={() => setShowAddDialog(false)}
+                isEditing={false}
+              />
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Edit Lead Dialog */}
+        <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center space-x-2">
+                <Pen className="h-4 w-4" />
+                <span>Edit Lead</span>
+              </DialogTitle>
+              {/* <DialogDescription>
+                Update the lead information below
+              </DialogDescription> */}
+            </DialogHeader>
+
+            <div className="mt-4">
+              {editingLead && (
+                <LeadForm
+                  initialData={editingLead}
+                  onSubmit={handleEditLead}
+                  onCancel={() => {
+                    setShowEditDialog(false)
+                    setEditingLead(null)
+                  }}
+                  isEditing={true}
+                />
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
     </DashboardLayout>
   )
 }

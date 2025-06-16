@@ -94,7 +94,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     return null
   }
 
-  const userRole = user.roles[0].name
+  const userRole = user?.roles[0].name
   const canManageTeam = userRole === "Admin"
   const canCreateGoals = userRole === "CEO" || userRole === "Admin"
   const canViewTasks = userRole === "Team Member" || userRole === "Team Leader"
