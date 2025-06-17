@@ -77,7 +77,7 @@ export const authApi = {
   },
 
   register: async (userData: Omit<User, "id"> & { password: string }): Promise<User> => {
-    const response = await fetchApi<{ user: User }>('/register', {
+    const response = await fetchApi<{ user: User }>('/users/register', {
       method: 'POST',
       body: JSON.stringify(userData),
     })

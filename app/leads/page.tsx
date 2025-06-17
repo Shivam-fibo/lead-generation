@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-import type { TeamMember } from "@/lib/api"
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
@@ -18,6 +17,7 @@ import { Pen, Plus, Upload } from "lucide-react"
 import { useAuthStore } from "@/stores/auth-store"
 import { useLeadList } from "@/hooks/use-leads"
 import LeadForm, { Lead } from "@/components/lead-form"
+import { useWebSocketConnection } from '@/lib/websocket';
 
 interface AddTeamMember {
   username: string;
@@ -34,16 +34,17 @@ export default function LeadManagement() {
   const {
     leads,
     pagination,
-    error : leadError,
-    isError : isLeadError,
-    isLoading : isLeadLoading,
-    isSuccess : isLeadSuccess
+    error: leadError,
+    isError: isLeadError,
+    isLoading: isLeadLoading,
+    isSuccess: isLeadSuccess
   } = useLeadList()
 
   const [showAddDialog, setShowAddDialog] = useState(false)
   const [showEditDialog, setShowEditDialog] = useState(false)
   const [editingLead, setEditingLead] = useState<TeamMember | null>(null)
   const router = useRouter()
+  const { isConnected } = useWebSocketConnection();
 
   console.log('editingLead:', editingLead)
 
@@ -104,6 +105,11 @@ export default function LeadManagement() {
           </div>
         </div>
 
+        {/* <div className={`px-4 py-2 rounded-md ${isConnected ? 'bg-green-500' : 'bg-red-500'
+          } text-white`}>
+          WebSocket: {isConnected ? 'Connected' : 'Disconnected'}
+        </div> */}
+
         {/* <input id="csv-upload" type="file" accept=".csv" onChange={handleCSVUpload} className="hidden" /> */}
 
         <Tabs defaultValue="list" className="space-y-4">
@@ -126,8 +132,8 @@ export default function LeadManagement() {
                 <span>Add New Lead</span>
               </DialogTitle>
               {/* <DialogDescription>
-                Fill in the details to add a new lead to your system
-              </DialogDescription> */}
+                  Fill in the details to add a new lead to your system
+                </DialogDescription> */}
             </DialogHeader>
 
             <div className="mt-4">
@@ -149,8 +155,8 @@ export default function LeadManagement() {
                 <span>Edit Lead</span>
               </DialogTitle>
               {/* <DialogDescription>
-                Update the lead information below
-              </DialogDescription> */}
+                  Update the lead information below
+                </DialogDescription> */}
             </DialogHeader>
 
             <div className="mt-4">
@@ -170,5 +176,6 @@ export default function LeadManagement() {
         </Dialog>
       </div>
     </DashboardLayout>
+
   )
 }

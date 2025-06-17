@@ -21,12 +21,10 @@ export default function SignUpForm() {
     first_name: "",
     last_name: "",
     email: "",
-    username: "",
+    projectName: "",
     number: "",
     password: "",
-    confirmPassword: "",
-    department: "",
-    role: "Team Member",
+    confirmPassword: ""
   })
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
@@ -48,20 +46,19 @@ export default function SignUpForm() {
       return
     }
 
-    if (!formData.first_name || !formData.last_name || !formData.email || !formData.username || !formData.department) {
+    if (!formData.first_name || !formData.last_name || !formData.email || !formData.number || !formData.password || !formData.projectName) {
       setError("Please fill in all required fields")
       return
     }
 
     // Registration
     register({
-      first_name: formData.first_name,
-      last_name: formData.last_name,
+      firstName: formData.first_name,
+      lastName: formData.last_name,
       email: formData.email,
-      username: formData.username,
-      number: formData.number,
+      phoneNo: formData.number,
       password: formData.password,
-      roles: [{ name: formData.role, _id: formData.role.toLowerCase().replace(/\s+/g, "-") }]
+      projectName: formData.projectName
     }, {
       onSuccess: () => router.push("/dashboard"),
       onError: () => setError(registerError || "Registration failed")
@@ -124,13 +121,13 @@ export default function SignUpForm() {
           </div>
 
           <div className="grid gap-2">
-            <Label htmlFor="username">Username</Label>
+            <Label htmlFor="projectName">Project Name</Label>
             <Input
-              id="username"
+              id="projectName"
               type="text"
-              placeholder="johndoe"
-              value={formData.username}
-              onChange={(e) => handleInputChange("username", e.target.value)}
+              placeholder="Naroda Lavish"
+              value={formData.projectName}
+              onChange={(e) => handleInputChange("projectName", e.target.value)}
               required
             />
           </div>
@@ -146,7 +143,7 @@ export default function SignUpForm() {
             />
           </div>
 
-          <div className="grid gap-2">
+          {/* <div className="grid gap-2">
             <Label htmlFor="role">Role</Label>
             <Select value={formData.role} onValueChange={(value) => handleInputChange("role", value)}>
               <SelectTrigger>
@@ -160,9 +157,9 @@ export default function SignUpForm() {
                 ))}
               </SelectContent>
             </Select>
-          </div>
+          </div> */}
 
-          <div className="grid gap-2">
+          {/* <div className="grid gap-2">
             <Label htmlFor="department">Department</Label>
             <Select value={formData.department} onValueChange={(value) => handleInputChange("department", value)}>
               <SelectTrigger>
@@ -176,7 +173,7 @@ export default function SignUpForm() {
                 ))}
               </SelectContent>
             </Select>
-          </div>
+          </div> */}
 
           <div className="grid gap-2">
             <Label htmlFor="password">Password</Label>

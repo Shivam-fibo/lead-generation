@@ -6,8 +6,17 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useTeamStore } from "@/stores/team-store"
 import { leadsApi } from "@/lib/api"
 import { Pagination } from "@/components/ui/pagination"
+import { useWebSocket } from "@/lib/websocket"
 
 export const useLeadList = () => {
+  const queryClient = useQueryClient();
+
+  // WebSocket subscription for real-time lead updates
+  useWebSocket('leadUpdate', (data) => {
+    // Invalidate and refetch leads when we receive an update
+    queryClient.invalidateQueries({ queryKey: ["getAllLeads"] });
+  });
+
   const {
     data,
     isLoading,
@@ -19,6 +28,8 @@ export const useLeadList = () => {
     queryFn: leadsApi.getAllLeads,
     staleTime: 5 * 60 * 1000,
   })
+  
+  
   return {
     leads: data?.data || [],
     pagination: data?.pagination || null,
