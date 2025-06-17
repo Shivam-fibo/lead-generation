@@ -28,7 +28,8 @@ export default function LoginForm() {
     e.preventDefault()
     try {
       await login(
-        { username_or_email: email, password },
+        // { username_or_email: email, password },
+        { email: email, password },
         {
           onSuccess: (data) => {
             console.log('Login successful:', data)

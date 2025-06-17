@@ -18,7 +18,7 @@ export function useAuth() {
   })
 
   const loginMutation = useMutation({
-    mutationFn: ({ username_or_email, password }: { username_or_email: string; password: string }) => authApi.login(username_or_email, password),
+    mutationFn: ({ email, username_or_email, password }: { email : string, username_or_email?: string; password: string }) => authApi.login(email, username_or_email, password),
     onSuccess: (user) => {
       console.log('Login successful, setting user:', user)
       setUser(user)

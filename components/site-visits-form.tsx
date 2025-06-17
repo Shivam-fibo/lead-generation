@@ -11,6 +11,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar as CalendarIcon, Clock } from "lucide-react"
 import { format } from "date-fns"
 import { cn } from "@/lib/utils"
+import { mockLeads } from "./leads-list"
+import { mockSiteVisits } from "./site-visit-list"
 
 export interface SiteVisit {
   id?: string;
@@ -57,16 +59,10 @@ export default function SiteVisitForm({
 
   const [errors, setErrors] = useState<Record<string, string>>({})
 
-  // Mock leads data for demonstration
-  const mockLeads = [
-    { id: "1", name: "Sarah Johnson", phone: "+91 9123867523", email: "sarah@company.com" },
-    { id: "2", name: "Rahul Sharma", phone: "+91 9876543210", email: "rahul@example.com" },
-    { id: "3", name: "Priya Patel", phone: "+91 9555123456", email: "priya@company.com" },
-    { id: "4", name: "Mike Wilson", phone: "+91 9444987654", email: "mike@business.com" },
-    { id: "5", name: "Anjali Singh", phone: "+91 9333876543", email: "anjali@email.com" }
-  ]
+  const leadsToUse = availableLeads.length > 0 ? availableLeads : mockSiteVisits
 
-  const leadsToUse = availableLeads.length > 0 ? availableLeads : mockLeads
+  console.log('availableLeads', availableLeads)
+  console.log('mockLeads', mockLeads)
 
   const handleInputChange = (field: keyof typeof formData, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }))
@@ -77,11 +73,11 @@ export default function SiteVisitForm({
   }
 
   const handleLeadChange = (leadId: string) => {
-    const selectedLead = leadsToUse.find(lead => lead.id === leadId)
+    const selectedLead = leadsToUse.find(lead => lead.Lead.id === leadId)
     setFormData(prev => ({ 
       ...prev, 
       leadId: leadId,
-      leadName: selectedLead?.name || ""
+      leadName: selectedLead?.Lead.name || ""
     }))
     if (errors.leadId) {
       setErrors(prev => ({ ...prev, leadId: "" }))
@@ -154,10 +150,10 @@ export default function SiteVisitForm({
             </SelectTrigger>
             <SelectContent>
               {leadsToUse.map((lead) => (
-                <SelectItem key={lead.id} value={lead.id}>
+                <SelectItem key={lead.Lead.id} value={lead.Lead.id}>
                   <div className="flex flex-col">
-                    <span className="font-medium">{lead.name}</span>
-                    <span className="text-sm text-gray-500">{lead.phone} • {lead.email}</span>
+                    <span className="font-medium">{lead.Lead.name}</span>
+                    <span className="text-sm text-gray-500">{lead.Lead.phone} • {lead.Lead.email}</span>
                   </div>
                 </SelectItem>
               ))}

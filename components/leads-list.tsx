@@ -30,7 +30,13 @@ import {
   Flame,
   CheckCircle,
   ChevronDown,
-  LucideSnowflake
+  LucideSnowflake,
+
+
+  XCircle,
+  PhoneOff,
+  AlertCircle,
+  HelpCircle
 } from "lucide-react"
 
 import {
@@ -62,7 +68,7 @@ interface Lead {
   followUpReason?: string;
 }
 
-const mockLeads = [
+export const mockLeads = [
   {
     id: "1",
     name: "Sarah Johnson",
@@ -146,38 +152,38 @@ const mockLeads = [
 ]
 
 
-export default function LeadsList({ leads, onEdit, onDelete }: any) {
+export default function LeadsList({ leads, onEdit, onDelete, pagination }: any) {
   const [searchTerm, setSearchTerm] = useState("")
-  const [selectedLead, setSelectedLead] = useState<Lead | null>(null)
+  const [selectedLead, setSelectedLead] = useState<any | null>(null)
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
 
-  const handleViewLead = (lead: Lead) => {
+  const handleViewLead = (lead: any) => {
     setSelectedLead(lead)
     setIsDrawerOpen(true)
   }
 
-
-  const StatusBadge = ({ status }: { status: string }) => {
-    const getStatusStyle = (status: string) => {
-      switch (status.toLowerCase()) {
-        case 'hot':
-          return "bg-red-50 text-red-700 border border-red-200 hover:bg-red-100"
-        case 'cold':
-          return "bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100"
-        case 'warm':
-          return "bg-orange-50 text-orange-700 border border-orange-200 hover:bg-orange-100"
-        default:
-          return "bg-gray-50 text-gray-700 border border-gray-200 hover:bg-gray-100"
+  const StatusBadge = ({ status }: { status: boolean }) => {
+    const getStatusStyle = (status: boolean) => {
+      if (status) {
+        return "bg-red-50 text-red-700 border border-red-200 hover:bg-red-100"
+      } else {
+        return "bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100"
       }
     }
-
     return (
       <span className={`inline-flex items-center  px-2.5 py-0.5 rounded-full text-xs font-medium transition-colors ${getStatusStyle(status)}`}>
-        {status === "Hot" ?
-          <Flame className="h-3.5 w-3.5 mr-0.5" />
+        {status ?
+          (<>
+            <Flame className="h-3.5 w-3.5 mr-0.5" />
+            <span> Hot </span>
+          </>
+          )
           :
-          <LucideSnowflake className="h-3.5 w-3.5 mr-0.5" />
-        }
+          (<>
+            <LucideSnowflake className="h-3.5 w-3.5 mr-0.5" />
+            <span> Cold </span>
+          </>
+          )}
         {status}
       </span>
     )
@@ -220,11 +226,58 @@ export default function LeadsList({ leads, onEdit, onDelete }: any) {
       )
     }
   }
+  
+  const CallStatus = ({ status }: { status: string }) => {
+    if (status === "completed") {
+      return (
+        <div className="flex items-center gap-2">
+          <CheckCircle className="h-4 w-4 text-green-500" />
+          <span className="font-medium text-green-600 text-sm">Completed</span>
+        </div>
+      );
+    }
+
+    if (status === "no-answer") {
+      return (
+        <div className="flex items-center gap-2">
+          <PhoneOff className="h-4 w-4 text-yellow-500" />
+          <span className="font-medium text-yellow-600 text-sm">No Answer</span>
+        </div>
+      );
+    }
+
+    if (status === "busy") {
+      return (
+        <div className="flex items-center gap-2">
+          <XCircle className="h-4 w-4 text-orange-500" />
+          <span className="font-medium text-orange-600 text-sm">Busy</span>
+        </div>
+      );
+    }
+
+    if (status === "failed") {
+      return (
+        <div className="flex items-center gap-2">
+          <AlertCircle className="h-4 w-4 text-red-500" />
+          <span className="font-medium text-red-600 text-sm">Failed</span>
+        </div>
+      );
+    }
+
+    // Optional: fallback UI if status is unknown
+    return (
+      <div className="flex items-center gap-2">
+        <HelpCircle className="h-4 w-4 text-gray-500" />
+        <span className="font-medium text-gray-600 text-sm capitalize">{status || "Unknown"}</span>
+      </div>
+    );
+  };
+  
   return (
     <>
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Total Leads ({mockLeads.length})</CardTitle>
+          <CardTitle>Total Leads ({leads.length})</CardTitle>
           <div className="flex items-center space-x-2">
             <Search className="h-4 w-4 text-gray-400" />
             <Input
@@ -251,30 +304,32 @@ export default function LeadsList({ leads, onEdit, onDelete }: any) {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {mockLeads.map((lead) => (
-                  <TableRow key={lead.id} >
-                    <TableCell className="font-medium" onClick={() => handleViewLead(lead)}>{lead.name}</TableCell>
-                    <TableCell className="font-medium" onClick={() => handleViewLead(lead)}>{lead.phone}</TableCell>
-                    {/* <TableCell>{lead.email}</TableCell> */}
+                {leads.map((lead) => (
+                  <TableRow key={lead._id} >
+                    <TableCell className="font-medium" onClick={() => handleViewLead(lead)}>{lead.first_name}</TableCell>
+                    <TableCell className="font-medium" onClick={() => handleViewLead(lead)}>{lead.contact_number}</TableCell>
                     <TableCell onClick={() => handleViewLead(lead)}>
-                      <StatusBadge status={lead.status} />
+                      <StatusBadge status={lead.is_hot_lead} />
                     </TableCell>
                     <TableCell onClick={() => handleViewLead(lead)}>
-                      <CallImmediatelyBadge needsCall={lead.needsImmediateCall} />
+                      <CallImmediatelyBadge needsCall={lead.transfered === true && !lead.reached} />
                     </TableCell>
                     <TableCell onClick={() => handleViewLead(lead)}>
-                      <ReachedBadge HasReached={lead.HasReached} />
+                      <ReachedBadge HasReached={lead.reached} />
                     </TableCell>
                     <TableCell onClick={() => handleViewLead(lead)}>
-                      {new Date(lead.createdAt).toLocaleString('en-IN', {
-                        timeZone: 'Asia/Kolkata',
-                        day: 'numeric',
-                        month: 'long',
-                        year: 'numeric',
-                        hour: 'numeric',
-                        minute: '2-digit',
-                        hour12: true
-                      })}
+                      {lead.createdAt ?
+                        new Date(lead.createdAt).toLocaleString('en-IN', {
+                          timeZone: 'Asia/Kolkata',
+                          day: 'numeric',
+                          month: 'long',
+                          year: 'numeric',
+                          hour: 'numeric',
+                          minute: '2-digit',
+                          hour12: true
+                        })
+                        :
+                        "-"}
                     </TableCell>
                     <TableCell>
                       <div className="flex space-x-2">
@@ -300,7 +355,6 @@ export default function LeadsList({ leads, onEdit, onDelete }: any) {
                             <AlertDialogFooter>
                               <AlertDialogCancel>Cancel</AlertDialogCancel>
                               <AlertDialogAction onClick={() => onDelete(lead.id)}>Delete</AlertDialogAction>
-                              {/* <AlertDialogAction>Delete</AlertDialogAction> */}
                             </AlertDialogFooter>
                           </AlertDialogContent>
                         </AlertDialog>
@@ -318,32 +372,12 @@ export default function LeadsList({ leads, onEdit, onDelete }: any) {
         <SheetContent className="w-[600px] sm:w-[600px] overflow-y-auto">
           <SheetHeader className="border-b pb-4">
             <div className="flex items-center justify-between">
-              <SheetTitle className="text-2xl font-bold">{selectedLead?.name}</SheetTitle>
+              <SheetTitle className="text-2xl font-bold">{selectedLead?.first_name}</SheetTitle>
             </div>
-            {/* 
-            {selectedLead && (
-              <div className="flex flex-col items-start gap-4 text-sm text-gray-600 pt-2">
-                
-                <div className="flex items-center justify-between gap-1 w-full">
-                  <div className="flex items-center gap-1">
-                    <Calendar className="h-4 w-4" />
-                    <span className=" text-sm">Visit scheduled</span>
-                  </div>
-                  <span className="font-medium text-sm">{selectedLead.siteVisit}</span>
-                </div>
-                
-                <div className="flex items-center gap-1">
-                  <Phone className="h-4 w-4" />
-                  <span className="font-medium">{selectedLead.phone}</span>
-                </div>
-              </div>
-            )} */}
-
           </SheetHeader>
-
           {selectedLead && (
             <div className="py-6 space-y-6">
-              {selectedLead.status === "Hot" &&
+              {selectedLead.reason_of_transfer &&
                 <Card className="bg-yellow-50 border-yellow-200">
                   <CardHeader className="pb-3">
                     <CardTitle className="text-md font-semibold text-yellow-800 flex items-center gap-2">
@@ -353,10 +387,11 @@ export default function LeadsList({ leads, onEdit, onDelete }: any) {
                   </CardHeader>
                   <CardContent className="pt-0">
                     <p className="text-sm text-gray-700 leading-relaxed">
-                      {selectedLead.followUpReason}
+                      {selectedLead.reason_of_transfer}
                     </p>
                   </CardContent>
                 </Card>}
+
               {/* Lead Information Section */}
               <Card>
                 <CardHeader className="pb-3">
@@ -366,16 +401,16 @@ export default function LeadsList({ leads, onEdit, onDelete }: any) {
                   <div className="flex justify-between items-center">
                     <span className="text-gray-600 text-sm">Status:</span>
                     <div className="flex items-center gap-2">
-                      <StatusBadge status={selectedLead.status} />
+                      <StatusBadge status={selectedLead.is_hot_lead} />
                     </div>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-gray-600 text-sm">Contact:</span>
-                    <span className="font-medium text-sm">{selectedLead.phone}</span>
+                    <span className="font-medium text-sm">{selectedLead.contact_number}</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-gray-600 text-sm">Requirement:</span>
-                    <span className="font-medium text-sm">{selectedLead.requirement}</span>
+                    <span className="font-medium text-sm">{selectedLead.requirement ? selectedLead.requirement : "-"}</span>
                   </div>
                 </CardContent>
               </Card>
@@ -388,18 +423,29 @@ export default function LeadsList({ leads, onEdit, onDelete }: any) {
                 <CardContent className="space-y-4">
                   <div className="flex justify-between items-center">
                     <span className="text-gray-600 text-sm">Call Status:</span>
-                    <div className="flex items-center gap-2">
-                      <CheckCircle className="h-4 w-4 text-green-500" />
-                      <span className="font-medium text-green-600 text-sm">{selectedLead.callStatus}</span>
-                    </div>
+                    <CallStatus status={selectedLead.call_status} />
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-gray-600 text-sm">Site Visit:</span>
-                    <span className="font-medium text-sm">{selectedLead.siteVisit}</span>
+                    <span className="font-medium text-sm">
+                      {selectedLead.site_visit ?
+
+                        new Date(selectedLead.site_visit).toLocaleString('en-IN', {
+                          timeZone: 'Asia/Kolkata',
+                          day: 'numeric',
+                          month: 'long',
+                          year: 'numeric',
+                          hour: 'numeric',
+                          minute: '2-digit',
+                          hour12: true
+                        })
+                        :
+                        'Not scheduled'}
+                    </span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-gray-600 text-sm">Property:</span>
-                    <span className="font-medium text-sm">{selectedLead.property}</span>
+                    <span className="font-medium text-sm">{selectedLead.projectName}</span>
                   </div>
                 </CardContent>
               </Card>
@@ -413,7 +459,7 @@ export default function LeadsList({ leads, onEdit, onDelete }: any) {
                   <div className="space-y-3">
                     <div>
                       <p className="text-sm text-gray-700 mt-1 leading-relaxed">
-                        {selectedLead.callSummary}
+                        {selectedLead.call_summary ? selectedLead.call_summary : "-"}
                       </p>
                     </div>
                   </div>
@@ -425,13 +471,27 @@ export default function LeadsList({ leads, onEdit, onDelete }: any) {
                 {/* <CardHeader className="pb-3"> */}
                 <CardHeader className="pb-0">
                   {/* <div className="flex items-center justify-between"> */}
-                    {/* <CardTitle className="text-md font-semibold">Conversation History</CardTitle>
+                  {/* <CardTitle className="text-md font-semibold">Conversation History</CardTitle>
                     <ChevronDown className="h-4 w-4 text-gray-400" /> */}
                   {/* </div> */}
                 </CardHeader>
                 <CardContent>
                   <div className="text-sm text-gray-500">
-                    Created: {selectedLead.createdAt}, 12:22:35
+
+                    <span> Created at: </span>
+                    {selectedLead.createdAt ?
+
+                      new Date(selectedLead.createdAt).toLocaleString('en-IN', {
+                        timeZone: 'Asia/Kolkata',
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric',
+                        hour: 'numeric',
+                        minute: '2-digit',
+                        hour12: true
+                      })
+                      :
+                      "-"}
                   </div>
                 </CardContent>
               </Card>

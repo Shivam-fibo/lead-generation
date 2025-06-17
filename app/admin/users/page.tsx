@@ -16,7 +16,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Plus, Upload } from "lucide-react"
 import { useAuthStore } from "@/stores/auth-store"
 import { useTeamStore } from "@/stores/team-store"
-import { useTeam } from "@/hooks/use-team"
+import { useTeam } from "@/hooks/use-leads"
 
 
 interface AddTeamMember {

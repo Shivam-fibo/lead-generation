@@ -70,7 +70,7 @@ interface Lead {
   followUpReason?: string;
 }
 
-const mockSiteVisits = [
+export const mockSiteVisits = [
   {
     Lead: {
       id: "1",
@@ -230,18 +230,12 @@ export default function SiteVisitsList({ leads, onEdit, onDelete }: any) {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
   const [leadFilter, setLeadFilter] = useState<string>("all")
 
-
-
   const handleViewLead = (siteVisit: any) => {
     setSelectedSiteVisit(siteVisit)
     setIsDrawerOpen(true)
   }
 
-
   const StatusBadge = ({ status }: { status: string }) => {
-
-    console.log('status', status)
-
     const getStatusStyle = (status: string) => {
       switch (status.toLowerCase()) {
         case 'hot':
@@ -334,13 +328,12 @@ export default function SiteVisitsList({ leads, onEdit, onDelete }: any) {
                   <SelectItem value="all">Select Lead</SelectItem>
                   {
                     mockSiteVisits.map((item) => {
-                      return <SelectItem value={`${item.Lead.name}`}> {item.Lead.name} </SelectItem>
+                      return <SelectItem key={item.id} value={`${item.Lead.name}`}> {item.Lead.name} </SelectItem>
                     })
                   }
                 </SelectContent>
               </Select>
             </div>
-
           </div>
         </CardHeader>
         <CardContent>

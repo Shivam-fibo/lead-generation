@@ -148,7 +148,7 @@ export default function Dashboard() {
     return null
   }
 
-  const userRole = user.roles[0].name
+  // const userRole = user.roles[0].name
   // const canManageTeam = user.roles[0].name === "Admin"
   // const canCreateGoals = user.roles[0].name === "CEO" || user.roles[0].name === "Admin"
   // const canUseAI = userRole === "CEO" || userRole === "Admin" || userRole === "Team Leader"
@@ -161,7 +161,7 @@ export default function Dashboard() {
         ) : (
           <div className="space-y-6">
             <div>
-              <h1 className="text-3xl font-bold tracking-tight">Welcome back, {user.first_name}</h1>
+              <h1 className="text-3xl font-bold tracking-tight">Welcome back, {user.firstName}</h1>
               <p className="text-muted-foreground mt-4">Welcome back! Here's your lead management overview.</p>
             </div>
 

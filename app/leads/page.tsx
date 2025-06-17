@@ -16,8 +16,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Pen, Plus, Upload } from "lucide-react"
 import { useAuthStore } from "@/stores/auth-store"
-import { useTeamStore } from "@/stores/team-store"
-import { useTeam } from "@/hooks/use-team"
+import { useLeadList } from "@/hooks/use-leads"
 import LeadForm, { Lead } from "@/components/lead-form"
 
 interface AddTeamMember {
@@ -33,18 +32,13 @@ interface AddTeamMember {
 export default function LeadManagement() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuthStore()
   const {
-    members: apiMembers,
-    isLoading: teamLoading,
-    addMember: addTeamMember,
-    addMembersCsv,
-    updateMember: updateTeamMember,
-    deleteMember: deleteTeamMember,
-    isAddingMember,
-    isAddingMembersCsv,
-    isUpdatingMember
-  } = useTeam()
-
-  const members = apiMembers
+    leads,
+    pagination,
+    error : leadError,
+    isError : isLeadError,
+    isLoading : isLeadLoading,
+    isSuccess : isLeadSuccess
+  } = useLeadList()
 
   const [showAddDialog, setShowAddDialog] = useState(false)
   const [showEditDialog, setShowEditDialog] = useState(false)
@@ -76,65 +70,18 @@ export default function LeadManagement() {
 
   const handleEditLead = (memberData: Partial<TeamMember>) => {
     if (!editingLead?._id) return;
-    updateTeamMember(editingLead._id, memberData);
+    // updateTeamMember(editingLead._id, memberData);
     setEditingLead(null);
     setShowEditDialog(false);
   }
 
   const handleDeleteLead = (id: string) => {
-    deleteTeamMember(id)
+    // deleteTeamMember(id)
   }
 
   const handleEditClick = (member: TeamMember) => {
     setEditingLead(member)
     setShowEditDialog(true)
-  }
-
-  const handleCSVUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (!file) return
-
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      const csv = e.target?.result as string
-      const lines = csv.split("\n").filter(line => line.trim())
-      const members: Omit<TeamMember, "_id">[] = []
-
-      // Skip header row
-      for (let i = 1; i < lines.length; i++) {
-        const values = lines[i].match(/(?:\"([^\"]*)\"|([^,]+))/g)?.map(v =>
-          v.trim().replace(/^"|"$/g, '').trim()
-        ) || []
-
-        if (values.length >= 6) {
-          try {
-            const roleId = values[5] || "68381f3578431cf9a9e1bba5" // Default to Team Member role if not specified
-            const roleName = "Team Member" // Default role name
-
-            const newMember = {
-              username: values[0],
-              email: values[1],
-              first_name: values[2],
-              last_name: values[3],
-              number: values[4],
-              roles: [{ _id: roleId, name: roleName }],
-              password: values[6] || 'default123',
-            }
-            members.push(newMember)
-          } catch (error) {
-            console.error(`Error processing line ${i + 1}:`, error)
-          }
-        }
-      }
-
-      if (members.length > 0) {
-        addMembersCsv(members)
-      }
-    }
-    reader.onerror = (error) => {
-      console.error('Error reading CSV file:', error)
-    }
-    reader.readAsText(file)
   }
 
   return (
@@ -157,14 +104,15 @@ export default function LeadManagement() {
           </div>
         </div>
 
-        <input id="csv-upload" type="file" accept=".csv" onChange={handleCSVUpload} className="hidden" />
+        {/* <input id="csv-upload" type="file" accept=".csv" onChange={handleCSVUpload} className="hidden" /> */}
 
         <Tabs defaultValue="list" className="space-y-4">
           <TabsContent value="list" className="space-y-4">
             <LeadsList
-              leads={members}
+              leads={leads}
               onEdit={handleEditClick}
               onDelete={handleDeleteLead}
+              pagination={pagination}
             />
           </TabsContent>
         </Tabs>

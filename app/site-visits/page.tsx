@@ -17,8 +17,10 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Filter, Pen, Plus, Search, Upload } from "lucide-react"
 import { useAuthStore } from "@/stores/auth-store"
 import { useTeamStore } from "@/stores/team-store"
-import { useTeam } from "@/hooks/use-team"
+import { useTeam } from "@/hooks/use-leads"
 import LeadForm, { Lead } from "@/components/lead-form"
+import SiteVisitForm from "@/components/site-visits-form"
+
 import { Input } from "@/components/ui/input"
 import {
   Select,
@@ -151,7 +153,7 @@ export default function LeadManagement() {
             </DialogHeader>
 
             <div className="mt-4">
-              <LeadForm
+              <SiteVisitForm
                 onSubmit={handleAddLead}
                 onCancel={() => setShowAddDialog(false)}
                 isEditing={false}
@@ -175,7 +177,7 @@ export default function LeadManagement() {
 
             <div className="mt-4">
               {editingLead && (
-                <LeadForm
+                <SiteVisitForm
                   initialData={editingLead}
                   onSubmit={handleEditLead}
                   onCancel={() => {

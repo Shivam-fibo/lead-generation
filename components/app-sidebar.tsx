@@ -94,21 +94,23 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     return null
   }
 
-  const userRole = user?.roles[0].name
-  const canManageTeam = userRole === "Admin"
-  const canCreateGoals = userRole === "CEO" || userRole === "Admin"
-  const canViewTasks = userRole === "Team Member" || userRole === "Team Leader"
-  const canViewProgress = userRole === "Admin" || userRole === "CEO" || userRole === "Team Leader"
-  const canUseAI = userRole === "CEO" || userRole === "Admin" || userRole === "Team Leader"
+  console.log('user', user)
 
-  const filteredNavMain = data.navMain.filter((item) => {
-    if (item.url === "/chat") return canUseAI // Fixed: was checking "/ai-assistant"
-    if (item.url === "/team") return canManageTeam
-    if (item.url === "/goals") return canCreateGoals
-    if (item.url === "/my-tasks") return canViewTasks
-    if (item.url === "/progress") return canViewProgress
-    return true
-  })
+  // const userRole = user?.roles[0].name
+  // const canManageTeam = userRole === "Admin"
+  // const canCreateGoals = userRole === "CEO" || userRole === "Admin"
+  // const canViewTasks = userRole === "Team Member" || userRole === "Team Leader"
+  // const canViewProgress = userRole === "Admin" || userRole === "CEO" || userRole === "Team Leader"
+  // const canUseAI = userRole === "CEO" || userRole === "Admin" || userRole === "Team Leader"
+
+  // const filteredNavMain = data.navMain.filter((item) => {
+  //   if (item.url === "/chat") return canUseAI // Fixed: was checking "/ai-assistant"
+  //   if (item.url === "/team") return canManageTeam
+  //   if (item.url === "/goals") return canCreateGoals
+  //   if (item.url === "/my-tasks") return canViewTasks
+  //   if (item.url === "/progress") return canViewProgress
+  //   return true
+  // })
 
   return (
     <Sidebar collapsible="icon" {...props}>
@@ -135,7 +137,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <SidebarGroupLabel>Main Menu</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {filteredNavMain.map((item) => (
+              {data.navMain.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild isActive={isNavItemActive(item.url)}>
                     <a href={item.url}>
@@ -180,15 +182,15 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 >
                   <Avatar className="h-8 w-8 rounded-lg">
                     <AvatarFallback className="rounded-lg">
-                      {user.first_name
+                      {user.firstName
                         .split(" ")
                         .map((n) => n[0])
                         .join("")}
                     </AvatarFallback>
                   </Avatar>
                   <div className="grid flex-1 text-left text-sm leading-tight">
-                    <span className="truncate font-semibold">{`${user.first_name} ${user.last_name}`}</span>
-                    <span className="truncate text-xs">{userRole}</span>
+                    <span className="truncate font-semibold">{`${user.firstName} ${user.lastName}`}</span>
+                    {/* <span className="truncate text-xs">{userRole}</span> */}
                   </div>
                   <ChevronUp className="ml-auto size-4" />
                 </SidebarMenuButton>
