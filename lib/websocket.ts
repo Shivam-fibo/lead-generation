@@ -3,7 +3,8 @@ import { useEffect, useRef, useCallback, useState } from 'react';
 const token = localStorage.getItem("authToken") 
 
 // Convert HTTP URL to WebSocket URL
-const WS_BASE_URL = `wss://satyasankalpdevelopers-ai-voice-agent-1.onrender.com/ws?token=${token}`;
+// const WS_BASE_URL = `wss://satyasankalpdevelopers-ai-voice-agent-1.onrender.com/ws?token=${token}`;
+const WS_BASE_URL = ``;
 
 
 console.log('WS_BASE_URL', WS_BASE_URL)
