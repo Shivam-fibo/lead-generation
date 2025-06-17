@@ -1,8 +1,6 @@
 "use client"
 
 import type React from "react"
-import type { TeamMember } from "@/lib/api"
-
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import DashboardLayout from "@/components/dashboard-layout"
@@ -16,9 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Filter, Pen, Plus, Search, Upload } from "lucide-react"
 import { useAuthStore } from "@/stores/auth-store"
-import { useTeamStore } from "@/stores/team-store"
-import { useTeam } from "@/hooks/use-leads"
-import LeadForm, { Lead } from "@/components/lead-form"
+import { useLeadList } from "@/hooks/use-leads"
 import SiteVisitForm from "@/components/site-visits-form"
 
 import { Input } from "@/components/ui/input"
@@ -43,18 +39,13 @@ interface AddTeamMember {
 export default function LeadManagement() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuthStore()
   const {
-    members: apiMembers,
-    isLoading: teamLoading,
-    addMember: addTeamMember,
-    addMembersCsv,
-    updateMember: updateTeamMember,
-    deleteMember: deleteTeamMember,
-    isAddingMember,
-    isAddingMembersCsv,
-    isUpdatingMember
-  } = useTeam()
-
-  const members = apiMembers
+    leads,
+    pagination,
+    error : leadError,
+    isError : isLeadError,
+    isLoading : isLeadLoading,
+    isSuccess : isLeadSuccess
+  } = useLeadList()
 
   const [showAddDialog, setShowAddDialog] = useState(false)
   const [showEditDialog, setShowEditDialog] = useState(false)
@@ -135,7 +126,7 @@ export default function LeadManagement() {
         <Tabs defaultValue="list" className="space-y-4">
           <TabsContent value="list" className="space-y-4">
             <SiteVisitsList
-              leads={members}
+              // leads={members}
               onEdit={handleEditClick}
               onDelete={handleDeleteLead}
             />
