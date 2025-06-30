@@ -1,6 +1,6 @@
 "use client"
 
-import type * as React from "react"
+import React from "react"
 import { useRouter, usePathname } from "next/navigation"
 import {
   Home,
@@ -22,7 +22,6 @@ import {
 } from "lucide-react"
 import { useTheme } from "next-themes"
 import { useAuth } from "@/hooks/use-auth"
-// import { useAiSession } from "@/hooks/use-ai-session"
 
 import {
   Sidebar,
@@ -40,7 +39,62 @@ import {
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 
-import type { User } from "@/lib/api"
+// Skeleton component for loading state
+function SidebarSkeleton() {
+  return (
+    <div className="w-64 h-full bg-background border-r flex flex-col">
+      {/* Header Skeleton */}
+      <div className="p-4 border-b">
+        <div className="flex items-center space-x-3">
+          <div className="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse" />
+          <div className="flex-1">
+            <div className="w-24 h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mb-1" />
+            <div className="w-32 h-3 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+          </div>
+        </div>
+      </div>
+
+      {/* Content Skeleton */}
+      <div className="flex-1 p-4 space-y-6">
+        {/* Main Menu Section */}
+        <div>
+          <div className="w-20 h-3 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mb-3" />
+          <div className="space-y-2">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="flex items-center space-x-3 p-2">
+                <div className="w-4 h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                <div className="w-16 h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Administration Section */}
+        <div>
+          <div className="w-24 h-3 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mb-3" />
+          <div className="space-y-2">
+            <div className="flex items-center space-x-3 p-2">
+              <div className="w-4 h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+              <div className="w-20 h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Footer Skeleton */}
+      <div className="p-4 border-t">
+        <div className="flex items-center space-x-3">
+          <div className="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse" />
+          <div className="flex-1">
+            <div className="w-24 h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mb-1" />
+            <div className="w-16 h-3 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+          </div>
+          <div className="w-4 h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+        </div>
+      </div>
+    </div>
+  )
+}
 
 const data = {
   navMain: [
@@ -64,10 +118,9 @@ const data = {
       items: [],
     },
   ],
-  adminItems: [
-    { title: "User Management", url: "/admin/users", icon: UsersRound, items: [] },
-    // { title: "Settings", url: "/admin/settings", icon: Settings, items: [] },
-  ]
+    adminItems: [
+      { title: "User Management", url: "/admin/users", icon: UsersRound, items: [] },
+    ]
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
@@ -75,7 +128,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const router = useRouter()
   const pathname = usePathname()
   const { theme, setTheme } = useTheme()
-
 
   const handleLogout = () => {
     logout(undefined, {
@@ -90,27 +142,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     return pathname === itemUrl
   }
 
+  // Show skeleton while user is loading
   if (!user) {
-    return null
+    return <SidebarSkeleton />
   }
 
-  console.log('user', user)
-
-  // const userRole = user?.roles[0].name
-  // const canManageTeam = userRole === "Admin"
-  // const canCreateGoals = userRole === "CEO" || userRole === "Admin"
-  // const canViewTasks = userRole === "Team Member" || userRole === "Team Leader"
-  // const canViewProgress = userRole === "Admin" || userRole === "CEO" || userRole === "Team Leader"
-  // const canUseAI = userRole === "CEO" || userRole === "Admin" || userRole === "Team Leader"
-
-  // const filteredNavMain = data.navMain.filter((item) => {
-  //   if (item.url === "/chat") return canUseAI // Fixed: was checking "/ai-assistant"
-  //   if (item.url === "/team") return canManageTeam
-  //   if (item.url === "/goals") return canCreateGoals
-  //   if (item.url === "/my-tasks") return canViewTasks
-  //   if (item.url === "/progress") return canViewProgress
-  //   return true
-  // })
 
   return (
     <Sidebar collapsible="icon" {...props}>
@@ -131,8 +167,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
+      
       <SidebarContent>
-
         <SidebarGroup>
           <SidebarGroupLabel>Main Menu</SidebarGroupLabel>
           <SidebarGroupContent>
@@ -151,7 +187,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <SidebarGroup>
+       <SidebarGroup>
           <SidebarGroupLabel>Administration</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
@@ -167,8 +203,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               ))}
             </SidebarMenu>
           </SidebarGroupContent>
-        </SidebarGroup>
-
+        </SidebarGroup> 
       </SidebarContent>
 
       <SidebarFooter>
@@ -190,7 +225,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   </Avatar>
                   <div className="grid flex-1 text-left text-sm leading-tight">
                     <span className="truncate font-semibold">{`${user.firstName} ${user.lastName}`}</span>
-                    {/* <span className="truncate text-xs">{userRole}</span> */}
                   </div>
                   <ChevronUp className="ml-auto size-4" />
                 </SidebarMenuButton>

@@ -226,7 +226,7 @@ export default function LeadsList({ leads, onEdit, onDelete, pagination }: any) 
       )
     }
   }
-  
+
   const CallStatus = ({ status }: { status: string }) => {
     if (status === "completed") {
       return (
@@ -272,7 +272,7 @@ export default function LeadsList({ leads, onEdit, onDelete, pagination }: any) 
       </div>
     );
   };
-  
+
   return (
     <>
       <Card>

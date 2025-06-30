@@ -1,6 +1,6 @@
 "use client"
 
-import { Card, CardContent } from "@/components/ui/card"
+import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Crosshair, Goal } from "lucide-react"
 
 export function LoadingScreen() {
@@ -110,182 +110,62 @@ export function TeamSkeleton() {
   )
 }
 
-export function TasksSkeleton() {
+export function LeadSkeleton() {
   return (
     <div className="space-y-6">
-      <div className="space-y-2">
-        <div className="h-8 bg-muted rounded w-32 animate-pulse"></div>
-        <div className="h-4 bg-muted rounded w-48 animate-pulse"></div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <Card key={i}>
-            <CardContent className="pt-6">
-              <div className="space-y-2">
-                <div className="h-4 bg-muted rounded w-24 animate-pulse"></div>
-                <div className="h-8 bg-muted rounded w-16 animate-pulse"></div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      <div className="space-y-4">
-        {Array.from({ length: 3 }).map((_, i) => (
-          <Card key={i}>
-            <CardContent className="pt-6">
-              <div className="space-y-4">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1 space-y-2">
-                    <div className="h-6 bg-muted rounded w-64 animate-pulse"></div>
-                    <div className="h-4 bg-muted rounded w-96 animate-pulse"></div>
-                    <div className="h-3 bg-muted rounded w-48 animate-pulse"></div>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="h-6 bg-muted rounded w-16 animate-pulse"></div>
-                    <div className="h-6 bg-muted rounded w-20 animate-pulse"></div>
-                  </div>
-                </div>
-                <div className="flex justify-between">
-                  <div className="h-10 bg-muted rounded w-32 animate-pulse"></div>
-                  <div className="h-10 bg-muted rounded w-48 animate-pulse"></div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-export function GoalsSkeleton() {
-  return (
-    <div className="space-y-6">
+      {/* Header Section */}
       <div className="flex justify-between items-center">
         <div className="space-y-2">
           <div className="h-8 bg-muted rounded w-48 animate-pulse"></div>
           <div className="h-4 bg-muted rounded w-64 animate-pulse"></div>
         </div>
-        <div className="h-10 bg-muted rounded w-32 animate-pulse"></div>
+        <div className="flex space-x-2">
+          <div className="h-10 bg-muted rounded w-32 animate-pulse"></div>
+          <div className="h-10 bg-muted rounded w-28 animate-pulse"></div>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {Array.from({ length: 3 }).map((_, i) => (
-          <Card key={i}>
-            <CardContent className="pt-6">
-              <div className="space-y-2">
-                <div className="h-4 bg-muted rounded w-24 animate-pulse"></div>
-                <div className="h-8 bg-muted rounded w-16 animate-pulse"></div>
-                <div className="h-3 bg-muted rounded w-32 animate-pulse"></div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      <div className="space-y-4">
-        {Array.from({ length: 3 }).map((_, i) => (
-          <Card key={i}>
-            <CardContent className="pt-6">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-2">
-                    <div className="h-6 bg-muted rounded w-64 animate-pulse"></div>
-                    <div className="h-4 bg-muted rounded w-96 animate-pulse"></div>
-                  </div>
-                  <div className="h-6 bg-muted rounded w-16 animate-pulse"></div>
-                </div>
-                <div className="flex justify-between">
-                  <div className="h-4 bg-muted rounded w-48 animate-pulse"></div>
-                  <div className="flex space-x-2">
-                    {Array.from({ length: 4 }).map((_, j) => (
-                      <div key={j} className="h-8 bg-muted rounded w-20 animate-pulse"></div>
-                    ))}
-                  </div>
-                </div>
-                <div className="h-2 bg-muted rounded w-full animate-pulse"></div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-export function ProgressSkeleton() {
-  return (
-    <div className="space-y-6">
-      <div className="space-y-2">
-        <div className="h-8 bg-muted rounded w-48 animate-pulse"></div>
-        <div className="h-4 bg-muted rounded w-64 animate-pulse"></div>
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <Card key={i}>
-            <CardContent className="pt-6">
-              <div className="space-y-2">
-                <div className="h-4 bg-muted rounded w-32 animate-pulse"></div>
-                <div className="h-8 bg-muted rounded w-16 animate-pulse"></div>
-                <div className="h-2 bg-muted rounded w-full animate-pulse"></div>
-                <div className="h-3 bg-muted rounded w-24 animate-pulse"></div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-        <Card className="col-span-4">
-          <CardContent className="pt-6">
-            <div className="space-y-4">
-              <div className="h-6 bg-muted rounded w-48 animate-pulse"></div>
-              <div className="h-64 bg-muted rounded animate-pulse"></div>
+      {/* Leads List Table */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div className="h-6 bg-muted rounded w-32 animate-pulse"></div>
+          <div className="flex items-center space-x-2">
+            <div className="h-4 bg-muted rounded w-4 animate-pulse"></div>
+            <div className="h-10 bg-muted rounded w-64 animate-pulse"></div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            {/* Table Header */}
+            <div className="grid grid-cols-7 gap-4 border-b pb-3 mb-4">
+              <div className="h-4 bg-muted rounded w-16 animate-pulse"></div>
+              <div className="h-4 bg-muted rounded w-20 animate-pulse"></div>
+              <div className="h-4 bg-muted rounded w-16 animate-pulse"></div>
+              <div className="h-4 bg-muted rounded w-24 animate-pulse"></div>
+              <div className="h-4 bg-muted rounded w-24 animate-pulse"></div>
+              <div className="h-4 bg-muted rounded w-20 animate-pulse"></div>
+              <div className="h-4 bg-muted rounded w-20 animate-pulse"></div>
             </div>
-          </CardContent>
-        </Card>
-        <Card className="col-span-3">
-          <CardContent className="pt-6">
-            <div className="space-y-4">
-              <div className="h-6 bg-muted rounded w-32 animate-pulse"></div>
-              <div className="h-64 bg-muted rounded animate-pulse"></div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
 
-      <div className="space-y-4">
-        {Array.from({ length: 3 }).map((_, i) => (
-          <Card key={i}>
-            <CardContent className="pt-6">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-2">
-                    <div className="h-6 bg-muted rounded w-48 animate-pulse"></div>
-                    <div className="h-4 bg-muted rounded w-64 animate-pulse"></div>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="h-8 bg-muted rounded w-16 animate-pulse"></div>
-                    <div className="h-4 bg-muted rounded w-24 animate-pulse"></div>
-                  </div>
-                </div>
-                <div className="h-3 bg-muted rounded w-full animate-pulse"></div>
-                <div className="grid grid-cols-4 gap-4">
-                  {Array.from({ length: 4 }).map((_, j) => (
-                    <div key={j} className="text-center space-y-1">
-                      <div className="h-6 bg-muted rounded w-8 mx-auto animate-pulse"></div>
-                      <div className="h-3 bg-muted rounded w-16 mx-auto animate-pulse"></div>
-                    </div>
-                  ))}
+            {/* Table Rows */}
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="grid grid-cols-7 gap-4 py-4 ">
+                <div className="h-5 bg-muted rounded w-20 animate-pulse"></div>
+                <div className="h-5 bg-muted rounded w-28 animate-pulse"></div>
+                <div className="h-6 bg-muted rounded w-16 animate-pulse"></div>
+                <div className="h-6 bg-muted rounded w-20 animate-pulse"></div>
+                <div className="h-6 bg-muted rounded w-16 animate-pulse"></div>
+                <div className="h-5 bg-muted rounded w-32 animate-pulse"></div>
+                <div className="flex space-x-2">
+                  <div className="h-8 bg-muted rounded w-8 animate-pulse"></div>
+                  <div className="h-8 bg-muted rounded w-8 animate-pulse"></div>
+                  <div className="h-8 bg-muted rounded w-8 animate-pulse"></div>
                 </div>
               </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }

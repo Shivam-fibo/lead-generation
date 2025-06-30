@@ -3,6 +3,7 @@
 // const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
 const API_BASE_URL = "https://satyasankalpdevelopers-ai-voice-agent-1.onrender.com/api"
 
+
 const buildUrl = (endpoint: string) => `${API_BASE_URL}${endpoint}`
 
 const getAuthToken = () => localStorage.getItem('authToken')
@@ -51,7 +52,7 @@ export interface User {
 
 // Auth API
 export const authApi = {
-  login: async (email:string, username_or_email?: string, password: string): Promise<User> => {
+  login: async (email: string, username_or_email?: string, password: string): Promise<User> => {
     const response = await fetchApi<{ user: User; token: string }>('/users/login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
@@ -119,3 +120,16 @@ export const leadsApi = {
     }
   },
 }
+
+export const companyApi = {
+
+  createCompany: async (companyData: any): Promise<any> => {
+    const response = await fetchApi<any>('/company', {
+      method: 'POST',
+      body: JSON.stringify(companyData),
+    });
+    return response;
+  },
+
+
+};
