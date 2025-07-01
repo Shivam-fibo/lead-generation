@@ -14,9 +14,9 @@ if (typeof window !== 'undefined') {
 
 // const WS_BASE_URL = `wss://b961-2409-4080-901d-15c8-edc1-7086-5a20-7dff.ngrok-free.app/ws?token=${token}`; 
 
-console.log('process.env.WS_BASE_URL_VAR', process.env.WS_BASE_URL_VAR)
+console.log('process.env.NEXT_PUBLIC_API_WS_BASE_URL', process.env.NEXT_PUBLIC_API_WS_BASE_URL)
 
-const WS_BASE_URL = `${process.env.WS_BASE_URL_VAR}/ws?token=${token}`;
+const WS_BASE_URL = `${process.env.NEXT_PUBLIC_API_WS_BASE_URL}ws?token=${token}`;
 
 console.log('WS_BASE_URL', WS_BASE_URL)
 
