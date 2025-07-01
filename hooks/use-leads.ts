@@ -12,10 +12,10 @@ export const useLeadList = () => {
   const queryClient = useQueryClient();
 
   // WebSocket subscription for real-time lead updates
-  useWebSocket('leadUpdate', (data) => {
+  // useWebSocket('leadUpdate', (data) => {
     // Invalidate and refetch leads when we receive an update
-    queryClient.invalidateQueries({ queryKey: ["getAllLeads"] });
-  });
+    // queryClient.invalidateQueries({ queryKey: ["getAllLeads"] });
+  // });
 
   const {
     data,

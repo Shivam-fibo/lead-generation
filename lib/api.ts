@@ -1,7 +1,7 @@
 // API Configuration
 // const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_LOCAL_URL
-// const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
-const API_BASE_URL = "https://satyasankalpdevelopers-ai-voice-agent-1.onrender.com/api"
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
+// const API_BASE_URL = "https://satyasankalpdevelopers-ai-voice-agent-1.onrender.com/api"
 
 
 const buildUrl = (endpoint: string) => `${API_BASE_URL}${endpoint}`
