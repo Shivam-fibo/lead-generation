@@ -592,7 +592,7 @@ export default function LeadManagement() {
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-gray-600 text-sm">Property:</span>
-                        <span className="font-medium text-sm">{selectedLead.project_name}</span>
+                        <span className="font-medium text-sm">{selectedLead.projectName ?selectedLead.projectName : selectedLead.project_name}</span>
                       </div>
                     </CardContent>
                   </Card>
