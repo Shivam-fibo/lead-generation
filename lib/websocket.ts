@@ -8,17 +8,13 @@ if (typeof window !== 'undefined') {
 // Convert HTTP URL to WebSocket URL  
 // const WS_BASE_URL = `wss://satyasankalpdevelopers-ai-voice-agent-1.onrender.com/ws?token=${token}`;
 
-// const WS_BASE_URL = `ws://localhost:8001/`; // local
+// const WS_BASE_URL = `ws://localhost:5000/ws?token=${token}`; // local
 
 // const WS_BASE_URL = `wss://cd42-2409-4080-9db4-4b8a-889b-f78b-62a-2b0c.ngrok-free.app/test-websocket`; 
 
 // const WS_BASE_URL = `wss://b961-2409-4080-901d-15c8-edc1-7086-5a20-7dff.ngrok-free.app/ws?token=${token}`; 
 
-console.log('process.env.NEXT_PUBLIC_API_WS_BASE_URL', process.env.NEXT_PUBLIC_API_WS_BASE_URL)
-
 const WS_BASE_URL = `${process.env.NEXT_PUBLIC_API_WS_BASE_URL}ws?token=${token}`;
-
-console.log('WS_BASE_URL', WS_BASE_URL)
 
 class WebSocketService {
   private ws: WebSocket | null = null;

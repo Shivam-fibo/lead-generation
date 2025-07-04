@@ -134,7 +134,7 @@ export const createColumns = ({
       const lead = row.original
       return (
         <div>
-          <StatusBadge status={lead.is_hot_lead} />
+          <StatusBadge status={lead.lead_type} />
         </div>
       )
     },
@@ -171,8 +171,8 @@ export const createColumns = ({
       const lead = row.original
       return (
         <div>
-          {lead.createdAt
-            ? new Date(lead.createdAt).toLocaleString('en-IN', {
+          {lead.created_at
+            ? new Date(lead.created_at).toLocaleString('en-IN', {
                 timeZone: 'Asia/Kolkata',
                 day: 'numeric',
                 month: 'long',

@@ -141,21 +141,21 @@ export default function SiteVisitManagement() {
   const router = useRouter()
 
 
-  useEffect(() => {
-    if (!authLoading) {
-      if (!user || !isAuthenticated) {
-        console.log('No authenticated user, redirecting to login')
-        router.push("/")
-        return
-      }
+  // useEffect(() => {
+  //   if (!authLoading) {
+  //     if (!user || !isAuthenticated) {
+  //       console.log('No authenticated user, redirecting to login')
+  //       router.push("/")
+  //       return
+  //     }
 
-      if (user.roles[0].name !== "Admin") {
-        console.log('User is not admin, redirecting to dashboard')
-        router.push("/dashboard")
-        return
-      }
-    }
-  }, [authLoading, router, user, isAuthenticated])
+  //     if (user.roles[0].name !== "Admin") {
+  //       console.log('User is not admin, redirecting to dashboard')
+  //       router.push("/dashboard")
+  //       return
+  //     }
+  //   }
+  // }, [authLoading, router, user, isAuthenticated])
 
   const handleViewSiteVisit = (siteVisit: any) => {
     setSelectedSiteVisit(siteVisit)

@@ -1,6 +1,6 @@
 "use client"
 
-import type React from "react"
+import React from "react"
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { AlertCircle, CheckCircle, Flame, HelpCircle, Locate, LocateOff, LucideSnowflake, Pen, PhoneOff, Plus, Upload, XCircle } from "lucide-react"
+import { AlertCircle, Bot, CheckCircle, ChevronDown, ChevronUp, Flame, HelpCircle, Locate, LocateOff, LucideSnowflake, Pen, PhoneOff, Plus, Upload, User, XCircle } from "lucide-react"
 import { useAuthStore } from "@/stores/auth-store"
 import { useLeadList } from "@/hooks/use-leads"
 import LeadForm, { Lead } from "@/components/lead-form"
@@ -30,6 +30,7 @@ import {
 import { DataTable } from "@/components/data-table"
 import { useWebSocket } from "@/lib/websocket"
 import { QueryClient, useQueryClient } from "@tanstack/react-query"
+import { Avatar, AvatarFallback } from "@radix-ui/react-avatar"
 
 interface AddTeamMember {
   username: string;
@@ -149,6 +150,129 @@ const CallStatus = ({ status }: { status: string }) => {
   );
 };
 
+interface ChatMessage {
+  id: number;
+  time: string;
+  sender: 'agent' | 'customer';
+  message: string;
+}
+
+// Define the interface for the raw conversation data
+interface RawConversationMessage {
+  _id: string;
+  timestamp: string;
+  speaker: string;
+  text: string;
+}
+
+interface ChatUIProps {
+  conversations: ChatMessage[];
+  expanded: boolean;
+}
+
+const extractJsObjectFromConvoString = (convo: string): ChatMessage[] => {
+  if (!convo || typeof convo !== 'string') return [];
+
+  const lines: string[] = convo.trim().split('\n').filter(line => line.trim());
+  const conversation: ChatMessage[] = [];
+
+  lines.forEach((line: string, index: number) => {
+    const match: RegExpMatchArray | null = line.match(/^\[(\d{2}:\d{2}:\d{2})\] (Agent|Customer): (.+)/);
+
+    if (match) {
+      const time: string = match[1];
+      const sender: 'agent' | 'customer' = match[2].toLowerCase() as 'agent' | 'customer';
+      let message: string = match[3];
+
+      // Remove <CHARACTER: backup> tags if present
+      message = message.replace(/<CHARACTER: backup>/g, '').replace(/<\/CHARACTER>/g, '');
+
+      conversation.push({
+        id: index,
+        time,
+        sender,
+        message: message.trim()
+      });
+    }
+  });
+
+  return conversation;
+};
+
+
+
+const ChatUI: React.FC<ChatUIProps> = ({ conversations, expanded }) => {
+  const displayedConversations = expanded ? conversations : conversations.slice(0, 3);
+
+  return (
+    <div className="space-y-4">
+      {displayedConversations.map((chat: ChatMessage) => (
+        <div key={chat.id} className="mb-4 mt-4">
+          {chat.sender === 'agent' ? (
+            // Agent Message
+            <div className="flex items-start justify-start space-x-3">
+              <div className="flex-shrink-0">
+                <div className="w-10 h-10 bg-muted text-black rounded-full flex items-center justify-center font-semibold">
+                  <Bot className="h-5 w-5" />
+                </div>
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center space-x-2 mb-1">
+                  {/* <span className="text-xs text-gray-500 px-2 py-1 rounded-full">Agent</span> */}
+                </div>
+                <div className="bg-muted text-black rounded-lg rounded-tl-none px-4 py-2 max-w-md">
+                  <p className="text-sm leading-relaxed">{chat.message}</p>
+                </div>
+                <span className="text-xs text-gray-500 px-2 py-1 rounded-full justify-start">{chat.time}</span>
+              </div>
+            </div>
+          ) : (
+            // Customer Message
+            <div className="flex items-start justify-end space-x-3">
+              <div className="flex-1">
+                <div className="flex items-center justify-end space-x-2 mb-1">
+                </div>
+                <div className="bg-neutral-900 text-white rounded-lg px-4 py-2 rounded-tr-none p-3 max-w-md ml-auto">
+                  <p className="text-sm text-white leading-relaxed">{chat.message}</p>
+                </div>
+                <span className="text-xs text-gray-500 px-2 py-1 rounded-full flex items-center justify-end">
+                  {chat.time}
+                </span>
+              </div>
+              <div className="flex-shrink-0">
+                <div className="w-10 h-10 bg-neutral-900 text-white rounded-full flex items-center justify-center font-semibold shadow-lg">
+                  U
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+};
+
+const processConversationArray = (conversations: RawConversationMessage[]): ChatMessage[] => {
+  if (!conversations || !Array.isArray(conversations)) return [];
+  
+  return conversations.map((convo: RawConversationMessage, index: number) => {
+    const sender: 'agent' | 'customer' = convo.speaker.toLowerCase() === 'agent' ? 'agent' : 'customer';
+    let message: string = convo.text;
+    
+    // Remove <CHARACTER: backup> tags if present
+    message = message.replace(/<CHARACTER: backup>/g, '').replace(/<\/CHARACTER>/g, '');
+    
+    return {
+      id: index,
+      time: convo.timestamp || new Date().toLocaleTimeString('en-US', { hour12: false }).slice(0, 5), // Use backend timestamp
+      sender,
+      message: message.trim()
+    };
+  });
+};
+
+
+
 export default function LeadManagement() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuthStore()
   const {
@@ -159,6 +283,11 @@ export default function LeadManagement() {
     isLoading: isLeadLoading,
     isSuccess: isLeadSuccess
   } = useLeadList()
+
+  const [isExpanded, setIsExpanded] = useState(false);
+  const toggleExpand = () => setIsExpanded(!isExpanded);
+  const [expanded, setExpanded] = useState(false);
+
 
   const [showAddDialog, setShowAddDialog] = useState(false)
   const [showEditDialog, setShowEditDialog] = useState(false)
@@ -176,6 +305,11 @@ export default function LeadManagement() {
 
   const handleNewLeadReceived = (newLead: any) => {
     console.log('Handling new lead:', newLead);
+
+    if(newLead?.type === "welcome") {
+      console.log('Ignoring welcome message', newLead);
+      return; 
+    }
 
     queryClient.setQueryData(['getAllLeads'], (oldData: any) => {
 
@@ -209,21 +343,21 @@ export default function LeadManagement() {
 
   console.log('editingLead:', editingLead)
 
-  useEffect(() => {
-    if (!authLoading) {
-      if (!user || !isAuthenticated) {
-        console.log('No authenticated user, redirecting to login')
-        router.push("/")
-        return
-      }
+  // useEffect(() => {
+  //   if (!authLoading) {
+  //     if (!user || !isAuthenticated) {
+  //       console.log('No authenticated user, redirecting to login')
+  //       router.push("/")
+  //       return
+  //     }
 
-      if (user.roles[0].name !== "Admin") {
-        console.log('User is not admin, redirecting to dashboard')
-        router.push("/dashboard")
-        return
-      }
-    }
-  }, [authLoading, router, user, isAuthenticated])
+  //     if (user.roles[0].name !== "Admin") {
+  //       console.log('User is not admin, redirecting to dashboard')
+  //       router.push("/dashboard")
+  //       return
+  //     }
+  //   }
+  // }, [authLoading, router, user, isAuthenticated])
 
   const handleAddLead = (memberData: Omit<TeamMember, "_id">) => {
     // addTeamMember(memberData);
@@ -256,6 +390,28 @@ export default function LeadManagement() {
     onEdit: handleEditClick,
     onDelete: handleDeleteLead,
   })
+
+
+  const parsedConversations = React.useMemo(() => {
+    if (!selectedLead?.llm_refined_conversation_history) return [];
+    
+    const conversationData = selectedLead.llm_refined_conversation_history;
+    
+    // Check if it's an array (new format)
+    if (Array.isArray(conversationData)) {
+      return processConversationArray(conversationData);
+    }
+    
+    // If it's a string (old format), use the string parsing function
+    if (typeof conversationData === 'string') {
+      return extractJsObjectFromConvoString(conversationData);
+    }
+    
+    return [];
+  }, [selectedLead?.llm_refined_conversation_history]);
+  
+  const hasConversations = parsedConversations.length > 0;
+  const showExpandButton = parsedConversations.length > 3;
 
   return (
     <DashboardLayout>
@@ -368,7 +524,7 @@ export default function LeadManagement() {
               </SheetHeader>
               {selectedLead && (
                 <div className="py-6 space-y-6">
-                  {selectedLead.reason_of_transfer &&
+                  {/* {selectedLead.reason_of_transfer &&
                     <Card className="bg-yellow-50 border-yellow-200">
                       <CardHeader className="pb-3">
                         <CardTitle className="text-md font-semibold text-yellow-800 flex items-center gap-2">
@@ -381,7 +537,7 @@ export default function LeadManagement() {
                           {selectedLead.reason_of_transfer}
                         </p>
                       </CardContent>
-                    </Card>}
+                    </Card>} */}
 
                   {/* Lead Information Section */}
                   <Card>
@@ -392,7 +548,7 @@ export default function LeadManagement() {
                       <div className="flex justify-between items-center">
                         <span className="text-gray-600 text-sm">Status:</span>
                         <div className="flex items-center gap-2">
-                          <StatusBadge status={selectedLead.is_hot_lead} />
+                          <StatusBadge status={selectedLead.lead_type} />
                         </div>
                       </div>
                       <div className="flex justify-between items-center">
@@ -414,29 +570,29 @@ export default function LeadManagement() {
                     <CardContent className="space-y-4">
                       <div className="flex justify-between items-center">
                         <span className="text-gray-600 text-sm">Call Status:</span>
-                        <CallStatus status={selectedLead.call_status} />
+                        <CallStatus status={selectedLead.call_connection_status} />
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-gray-600 text-sm">Site Visit:</span>
                         <span className="font-medium text-sm">
-                          {selectedLead.site_visit ?
-
-                            new Date(selectedLead.site_visit).toLocaleString('en-IN', {
-                              timeZone: 'Asia/Kolkata',
-                              day: 'numeric',
-                              month: 'long',
-                              year: 'numeric',
-                              hour: 'numeric',
-                              minute: '2-digit',
-                              hour12: true
-                            })
+                          {selectedLead.visit_booking_datetime ?
+                            selectedLead.visit_booking_datetime
+                            // new Date(selectedLead.site_visit).toLocaleString('en-IN', {
+                            //   timeZone: 'Asia/Kolkata',
+                            //   day: 'numeric',
+                            //   month: 'long',
+                            //   year: 'numeric',
+                            //   hour: 'numeric',
+                            //   minute: '2-digit',
+                            //   hour12: true
+                            // })
                             :
                             'Not scheduled'}
                         </span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-gray-600 text-sm">Property:</span>
-                        <span className="font-medium text-sm">{selectedLead.projectName}</span>
+                        <span className="font-medium text-sm">{selectedLead.project_name}</span>
                       </div>
                     </CardContent>
                   </Card>
@@ -470,9 +626,9 @@ export default function LeadManagement() {
                       <div className="text-sm text-gray-500">
 
                         <span> Created at: </span>
-                        {selectedLead.createdAt ?
+                        {selectedLead.created_at ?
 
-                          new Date(selectedLead.createdAt).toLocaleString('en-IN', {
+                          new Date(selectedLead.created_at).toLocaleString('en-IN', {
                             timeZone: 'Asia/Kolkata',
                             day: 'numeric',
                             month: 'long',
@@ -486,6 +642,42 @@ export default function LeadManagement() {
                       </div>
                     </CardContent>
                   </Card>
+
+                  <Card>
+                    <CardHeader className="pb-0">
+                      <h3 className="text-md font-semibold">Conversation History</h3>
+                    </CardHeader>
+                    <CardContent>
+                      {hasConversations ? (
+                        <>
+                          <ChatUI conversations={parsedConversations} expanded={expanded} />
+                          {showExpandButton && (
+                            <button
+                              onClick={() => setExpanded(!expanded)}
+                              className="mt-3 flex items-center gap-1 text-xs text-blue-600 hover:underline focus:outline-none"
+                            >
+                              {expanded ? (
+                                <>
+                                  <ChevronUp className="h-3 w-3" />
+                                  Show less
+                                </>
+                              ) : (
+                                <>
+                                  <ChevronDown className="h-3 w-3" />
+                                  Show more ({parsedConversations.length - 3} more messages)
+                                </>
+                              )}
+                            </button>
+                          )}
+                        </>
+                      ) : (
+                        <div className="text-sm text-gray-500 text-center py-4">
+                          *No conversation data found*
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+
                 </div>
               )}
             </SheetContent>

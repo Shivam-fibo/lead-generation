@@ -1,7 +1,8 @@
 // API Configuration
 // const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_LOCAL_URL
-// const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
-const API_BASE_URL = "https://satyasankalpdevelopers-ai-voice-agent-1.onrender.com/api"
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
+// const API_BASE_URL = "https://satyasankalpdevelopers-ai-voice-agent-1.onrender.com/api"
+// const API_BASE_URL = "http://localhost:5000/api"
 
 
 const buildUrl = (endpoint: string) => `${API_BASE_URL}${endpoint}`
@@ -50,14 +51,34 @@ export interface User {
   refresh_token?: string;
 }
 
+export interface TeamMember {
+  _id: string;
+  username: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  number: string;
+  roles: Role[];
+  password: string;
+}
+export interface TeamMemberPublic {
+  _id: string;
+  username: string;
+  first_name: string;
+  last_name: string;
+  roles: Role[];
+}
+
+
 // Auth API
 export const authApi = {
   login: async (email: string, username_or_email?: string, password: string): Promise<User> => {
-    const response = await fetchApi<{ user: User; token: string }>('/users/login', {
+    const response = await fetchApi<{ user: User; token: string }>('/login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     })
     // Save both the token and user data
+    console.log('response', response)
     localStorage.setItem('authToken', response.data.token)
     localStorage.setItem("currentUser", JSON.stringify(response.data.user))
     return response.data.user
@@ -122,7 +143,6 @@ export const leadsApi = {
 }
 
 export const companyApi = {
-
   createCompany: async (companyData: any): Promise<any> => {
     const response = await fetchApi<any>('/company', {
       method: 'POST',
@@ -130,6 +150,74 @@ export const companyApi = {
     });
     return response;
   },
-
-
 };
+
+
+export const teamApi = {
+  getTeamMembers: async (): Promise<TeamMember[]> => {
+    try {
+      const response = await fetchApi<{ users: TeamMember[] }>(`/user`)
+      if (!response) return [];
+      return response.users
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  getMemberListPublic: async (): Promise<TeamMemberPublic[]> => {
+    try {
+      const response = await fetchApi<{ users: TeamMemberPublic[] }>(`/user-list`)
+      if (!response) return [];
+      return response.users
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  addTeamMember: async (member: Omit<TeamMember, "_id">): Promise<TeamMember> => {
+    try {
+      const response = await fetchApi<{ user: TeamMember }>('/register', {
+        method: 'POST',
+        body: JSON.stringify(member)
+      });
+      return response.user;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  addTeamMembersCsv: async (members: Omit<TeamMember, "_id">[]): Promise<TeamMember[]> => {
+    try {
+      const response = await fetchApi<{ users: TeamMember[] }>('/csv-add-member', {
+        method: 'POST',
+        body: JSON.stringify({ users: members })
+      });
+      return response.users;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  updateTeamMember: async (id: string, member: Partial<TeamMember>): Promise<TeamMember> => {
+    try {
+      const response = await fetchApi<{ user: TeamMember }>(`/user/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(member)
+      });
+      return response.user;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  deleteTeamMember: async (id: string): Promise<void> => {
+    try {
+      await fetchApi(`/user/${id}`, {
+        method: 'DELETE'
+      });
+    } catch (error) {
+      throw error;
+    }
+  },
+
+}
