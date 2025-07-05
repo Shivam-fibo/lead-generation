@@ -1,8 +1,8 @@
 // API Configuration
 // const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_LOCAL_URL
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
+// const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
 // const API_BASE_URL = "https://satyasankalpdevelopers-ai-voice-agent-1.onrender.com/api"
-// const API_BASE_URL = "http://localhost:5000/api"
+const API_BASE_URL = "http://localhost:5000/api"
 
 
 const buildUrl = (endpoint: string) => `${API_BASE_URL}${endpoint}`
@@ -142,15 +142,80 @@ export const leadsApi = {
   },
 }
 
+// export const companyApi = {
+//   createCompany: async (companyData: any): Promise<any> => {
+//     const response = await fetchApi<any>('/company', {
+//       method: 'POST',
+//       body: JSON.stringify(companyData),
+//     });
+//     return response;
+//   },
+// };
+
 export const companyApi = {
+  // Your existing createCompany method
   createCompany: async (companyData: any): Promise<any> => {
-    const response = await fetchApi<any>('/company', {
+    const response = await fetchApi<{ company: any }>('/company', {
       method: 'POST',
       body: JSON.stringify(companyData),
     });
-    return response;
+    return response.company;
   },
-};
+
+  // Additional methods
+  // getAllCompanies: async (): Promise<any[]> => {
+  //   try {
+  //     const response = await fetchApi<{ companies: any[] }>('/companies');
+  //     return response.companies || [];
+  //   } catch (error) {
+  //     throw error;
+  //   }
+  // },
+
+  // getCompany: async (id: string): Promise<any> => {
+  //   try {
+  //     const response = await fetchApi<{ company: any }>(`/company/${id}`);
+  //     return response.company;
+  //   } catch (error) {
+  //     throw error;
+  //   }
+  // },
+
+  // updateCompany: async (id: string, companyData: Partial<any>): Promise<any> => {
+  //   try {
+  //     const response = await fetchApi<{ company: any }>(`/company/${id}`, {
+  //       method: 'PUT',
+  //       body: JSON.stringify(companyData),
+  //     });
+  //     return response.company;
+  //   } catch (error) {
+  //     throw error;
+  //   }
+  // },
+
+  // deleteCompany: async (id: string): Promise<void> => {
+  //   try {
+  //     await fetchApi(`/company/${id}`, {
+  //       method: 'DELETE'
+  //     });
+  //   } catch (error) {
+  //     throw error;
+  //   }
+  // },
+
+  // createCompaniesCsv: async (companies: Omit<Company, "_id" | "createdAt" | "updatedAt" | "__v">[]): Promise<Company[]> => {
+  //   try {
+  //     const response = await fetchApi<{ companies: Company[] }>('/companies/csv', {
+  //       method: 'POST',
+  //       body: JSON.stringify({ companies })
+  //     });
+  //     return response.companies;
+  //   } catch (error) {
+  //     throw error;
+  //   }
+  // }
+}
+
 
 
 export const teamApi = {

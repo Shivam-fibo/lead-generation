@@ -23,7 +23,7 @@ interface DashboardLayoutProps {
 export default function DashboardLayout({ children, breadcrumbs = [] }: DashboardLayoutProps) {
   const { isConnected } = useWebSocketConnection();
 
-  console.log('isConnected', isConnected)
+  // console.log('isConnected', isConnected)
 
   return (
     <SidebarProvider>

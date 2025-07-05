@@ -2,12 +2,12 @@
 
 import { ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
-import { 
-  Eye, 
-  Edit, 
-  Trash2, 
-  Flame, 
-  Locate, 
+import {
+  Eye,
+  Edit,
+  Trash2,
+  Flame,
+  Locate,
   LocateOff,
   CheckCircle,
   PhoneOff,
@@ -27,6 +27,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+import { FaLongArrowAltDown } from "react-icons/fa";
 
 // Badge components from the original LeadsList
 const StatusBadge = ({ status }: { status: boolean }) => {
@@ -85,8 +86,8 @@ const CallImmediatelyBadge = ({ needsCall }: { needsCall: boolean }) => {
     )
   } else {
     return (
-      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium transition-colors bg-slate-50 text-slate-600 border border-slate-200 hover:bg-slate-100">
-        📅 Standard
+      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium transition-colors bg-slate-50 text-blue-800 border border-slate-200 hover:bg-slate-100">
+         <FaLongArrowAltDown height={"10px"} width={"10px"} color="#1e40af"/> Low
       </span>
     )
   }
@@ -100,127 +101,151 @@ interface ColumnsProps {
 
 export const createColumns = ({
   onView,
-  onEdit, 
-  onDelete, 
+  onEdit,
+  onDelete,
 }: ColumnsProps): ColumnDef<any>[] => [
-  {
-    accessorKey: "first_name",
-    header: "Name",
-    cell: ({ row }) => {
-      const lead = row.original
-      return (
-        <div>
-          {lead.first_name}
-        </div>
-      )
+    {
+      accessorKey: "first_name",
+      header: "Name",
+      cell: ({ row }) => {
+        const lead = row.original
+        return (
+          <div>
+            {lead.first_name + " " + lead.last_name}
+          </div>
+        )
+      },
     },
-  },
-  {
-    accessorKey: "contact_number",
-    header: "Contact",
-    cell: ({ row }) => {
-      const lead = row.original
-      return (
-        <div>
-          {lead.contact_number}
-        </div>
-      )
+    {
+      accessorKey: "contact_number",
+      header: "Contact",
+      cell: ({ row }) => {
+        const lead = row.original
+        return (
+          <div>
+            {lead.contact_number}
+          </div>
+        )
+      },
     },
-  },
-  {
-    accessorKey: "is_hot_lead",
-    header: "Status",
-    cell: ({ row }) => {
-      const lead = row.original
-      return (
-        <div>
-          <StatusBadge status={lead.lead_type} />
-        </div>
-      )
+    {
+      accessorKey: "is_hot_lead",
+      header: "Status",
+      cell: ({ row }) => {
+        const lead = row.original
+        let temp;
+        if (lead.lead_type === "Cold") {
+          temp = false;
+        } else if (lead.lead_type === "Hot") {
+          temp = true
+        } else { 
+          temp = false;
+        }
+        return (
+          <div>
+            <StatusBadge status={temp} />
+          </div>
+        )
+      },
     },
-  },
-  {
-    id: "call_priority",
-    header: "Call Priority",
-    cell: ({ row }) => {
-      const lead = row.original
-      const needsCall = lead.transfered === true && !lead.reached
-      return (
-        <div>
-          <CallImmediatelyBadge needsCall={needsCall} />
-        </div>
-      )
+    {
+      id: "call_priority",
+      header: "Call Priority",
+      cell: ({ row }) => {
+        const lead = row.original
+        console.log('lead.call_immediately', lead.call_immediately)
+        const needsCall = lead.call_immediately
+        return (
+          <div>
+            <CallImmediatelyBadge needsCall={needsCall} />
+          </div>
+        )
+      },
     },
-  },
-  {
-    accessorKey: "reached",
-    header: "Has Reached",
-    cell: ({ row }) => {
-      const lead = row.original
-      return (
-        <div>
-          <ReachedBadge HasReached={lead.reached} />
-        </div>
-      )
+   
+    {
+      accessorKey: "reached",
+      header: "Has Reached",
+      cell: ({ row }) => {
+        const lead = row.original
+        return (
+          <div>
+            <ReachedBadge HasReached={lead.reached} />
+          </div>
+        )
+      },
     },
-  },
-  {
-    accessorKey: "createdAt",
-    header: "CreatedAt",
-    cell: ({ row }) => {
-      const lead = row.original
-      return (
-        <div>
-          {lead.created_at
-            ? new Date(lead.created_at).toLocaleString('en-IN', {
-                timeZone: 'Asia/Kolkata',
-                day: 'numeric',
-                month: 'long',
-                year: 'numeric',
-                hour: 'numeric',
-                minute: '2-digit',
-                hour12: true
-              })
-            : "-"
-          }
-        </div>
-      )
+     {
+      id: "visit_booking_datetime",
+      header: "Site Visit Booking",
+      cell: ({ row }) => {
+        const lead = row.original
+        console.log('lead.call_immediately', lead.visit_booking_datetime)
+        const needsCall = lead.call_immediately
+        return (
+          <div>
+            <span> {lead.visit_booking_datetime ? lead.visit_booking_datetime : "-"} </span>
+          </div>
+        )
+      },
     },
-  },
-  {
-    id: "actions",
-    header: "Actions",
-    cell: ({ row }) => {
-      const lead = row.original
-      return (
-        <div className="flex space-x-2">
-          <Button variant="outline" size="sm" onClick={() => onView(lead)}>
-            <Eye className="h-4 w-4" />
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => onEdit(lead)}>
-            <Edit className="h-4 w-4" />
-          </Button>
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="outline" size="sm">
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  This action cannot be undone. This will permanently delete {lead.first_name} from the Leads.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={() => onDelete(lead._id)}>Delete</AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        </div>
-      )
+    // {
+    //   accessorKey: "createdAt",
+    //   header: "CreatedAt",
+    //   cell: ({ row }) => {
+    //     const lead = row.original
+    //     return (
+    //       <div>
+    //         {lead.created_at
+    //           ? new Date(lead.created_at).toLocaleString('en-IN', {
+    //             timeZone: 'Asia/Kolkata',
+    //             day: 'numeric',
+    //             month: 'long',
+    //             year: 'numeric',
+    //             hour: 'numeric',
+    //             minute: '2-digit',
+    //             hour12: true
+    //           })
+    //           : "-"
+    //         }
+    //       </div>
+    //     )
+    //   },
+    // },
+    {
+      id: "actions",
+      header: "Actions",
+      cell: ({ row }) => {
+        const lead = row.original
+        return (
+          <div className="flex space-x-2">
+            {/* <Button variant="outline" size="sm" onClick={() => onView(lead)}>
+              <Eye className="h-4 w-4" />
+            </Button> */}
+            <Button variant="outline" size="sm" onClick={() => onEdit(lead)}>
+              <Edit className="h-4 w-4" />
+            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This action cannot be undone. This will permanently delete {lead.first_name} from the Leads.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={() => onDelete(lead._id)}>Delete</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+        )
+      },
     },
-  },
-]
+  ]

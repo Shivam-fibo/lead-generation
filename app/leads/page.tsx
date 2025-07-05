@@ -212,7 +212,7 @@ const ChatUI: React.FC<ChatUIProps> = ({ conversations, expanded }) => {
             // Agent Message
             <div className="flex items-start justify-start space-x-3">
               <div className="flex-shrink-0">
-                <div className="w-10 h-10 bg-muted text-black rounded-full flex items-center justify-center font-semibold">
+                <div className="w-10 h-10 bg-muted text-neutral-900 dark:text-neutral-200 rounded-full flex items-center justify-center font-semibold">
                   <Bot className="h-5 w-5" />
                 </div>
               </div>
@@ -220,7 +220,7 @@ const ChatUI: React.FC<ChatUIProps> = ({ conversations, expanded }) => {
                 <div className="flex items-center space-x-2 mb-1">
                   {/* <span className="text-xs text-gray-500 px-2 py-1 rounded-full">Agent</span> */}
                 </div>
-                <div className="bg-muted text-black rounded-lg rounded-tl-none px-4 py-2 max-w-md">
+                <div className="bg-muted text-neutral-900 dark:text-neutral-200 rounded-lg rounded-tl-none px-4 py-2 max-w-md">
                   <p className="text-sm leading-relaxed">{chat.message}</p>
                 </div>
                 <span className="text-xs text-gray-500 px-2 py-1 rounded-full justify-start">{chat.time}</span>
@@ -254,14 +254,14 @@ const ChatUI: React.FC<ChatUIProps> = ({ conversations, expanded }) => {
 
 const processConversationArray = (conversations: RawConversationMessage[]): ChatMessage[] => {
   if (!conversations || !Array.isArray(conversations)) return [];
-  
+
   return conversations.map((convo: RawConversationMessage, index: number) => {
     const sender: 'agent' | 'customer' = convo.speaker.toLowerCase() === 'agent' ? 'agent' : 'customer';
     let message: string = convo.text;
-    
+
     // Remove <CHARACTER: backup> tags if present
     message = message.replace(/<CHARACTER: backup>/g, '').replace(/<\/CHARACTER>/g, '');
-    
+
     return {
       id: index,
       time: convo.timestamp || new Date().toLocaleTimeString('en-US', { hour12: false }).slice(0, 5), // Use backend timestamp
@@ -306,9 +306,9 @@ export default function LeadManagement() {
   const handleNewLeadReceived = (newLead: any) => {
     console.log('Handling new lead:', newLead);
 
-    if(newLead?.type === "welcome") {
+    if (newLead?.type === "welcome") {
       console.log('Ignoring welcome message', newLead);
-      return; 
+      return;
     }
 
     queryClient.setQueryData(['getAllLeads'], (oldData: any) => {
@@ -394,24 +394,27 @@ export default function LeadManagement() {
 
   const parsedConversations = React.useMemo(() => {
     if (!selectedLead?.llm_refined_conversation_history) return [];
-    
+
     const conversationData = selectedLead.llm_refined_conversation_history;
-    
+
     // Check if it's an array (new format)
     if (Array.isArray(conversationData)) {
       return processConversationArray(conversationData);
     }
-    
+
     // If it's a string (old format), use the string parsing function
     if (typeof conversationData === 'string') {
       return extractJsObjectFromConvoString(conversationData);
     }
-    
+
     return [];
   }, [selectedLead?.llm_refined_conversation_history]);
-  
+
   const hasConversations = parsedConversations.length > 0;
   const showExpandButton = parsedConversations.length > 3;
+
+
+  console.log('selectedLead.created_at', selectedLead?.created_at)
 
   return (
     <DashboardLayout>
@@ -519,7 +522,7 @@ export default function LeadManagement() {
             <SheetContent className="w-[450px] overflow-y-auto">
               <SheetHeader className="border-b pb-4">
                 <div className="flex items-center justify-between">
-                  <SheetTitle className="text-2xl font-bold">{selectedLead?.first_name}</SheetTitle>
+                  <SheetTitle className="text-2xl font-bold">{selectedLead?.first_name + " " + selectedLead?.last_name}</SheetTitle>
                 </div>
               </SheetHeader>
               {selectedLead && (
@@ -546,17 +549,17 @@ export default function LeadManagement() {
                     </CardHeader>
                     <CardContent className="space-y-4">
                       <div className="flex justify-between items-center">
-                        <span className="text-gray-600 text-sm">Status:</span>
+                        <span className="text-gray-500 text-sm">Status:</span>
                         <div className="flex items-center gap-2">
                           <StatusBadge status={selectedLead.lead_type} />
                         </div>
                       </div>
                       <div className="flex justify-between items-center">
-                        <span className="text-gray-600 text-sm">Contact:</span>
+                        <span className="text-gray-500 text-sm">Contact:</span>
                         <span className="font-medium text-sm">{selectedLead.contact_number}</span>
                       </div>
                       <div className="flex justify-between items-center">
-                        <span className="text-gray-600 text-sm">Requirement:</span>
+                        <span className="text-gray-500 text-sm">Requirement:</span>
                         <span className="font-medium text-sm">{selectedLead.requirement ? selectedLead.requirement : "-"}</span>
                       </div>
                     </CardContent>
@@ -569,11 +572,11 @@ export default function LeadManagement() {
                     </CardHeader>
                     <CardContent className="space-y-4">
                       <div className="flex justify-between items-center">
-                        <span className="text-gray-600 text-sm">Call Status:</span>
+                        <span className="text-gray-500 text-sm">Call Status:</span>
                         <CallStatus status={selectedLead.call_connection_status} />
                       </div>
                       <div className="flex justify-between items-center">
-                        <span className="text-gray-600 text-sm">Site Visit:</span>
+                        <span className="text-gray-500 text-sm">Site Visit:</span>
                         <span className="font-medium text-sm">
                           {selectedLead.visit_booking_datetime ?
                             selectedLead.visit_booking_datetime
@@ -591,8 +594,8 @@ export default function LeadManagement() {
                         </span>
                       </div>
                       <div className="flex justify-between items-center">
-                        <span className="text-gray-600 text-sm">Property:</span>
-                        <span className="font-medium text-sm">{selectedLead.projectName ?selectedLead.projectName : selectedLead.project_name}</span>
+                        <span className="text-gray-500 text-sm">Property:</span>
+                        <span className="font-medium text-sm">{selectedLead.projectName ? selectedLead.projectName : selectedLead.project_name}</span>
                       </div>
                     </CardContent>
                   </Card>
@@ -605,7 +608,7 @@ export default function LeadManagement() {
                     <CardContent>
                       <div className="space-y-3">
                         <div>
-                          <p className="text-sm text-gray-700 mt-1 leading-relaxed">
+                          <p className="text-sm mt-1 leading-relaxed">
                             {selectedLead.call_summary ? selectedLead.call_summary : "-"}
                           </p>
                         </div>
@@ -623,22 +626,27 @@ export default function LeadManagement() {
                       {/* </div> */}
                     </CardHeader>
                     <CardContent>
-                      <div className="text-sm text-gray-500">
-
-                        <span> Created at: </span>
-                        {selectedLead.created_at ?
-
-                          new Date(selectedLead.created_at).toLocaleString('en-IN', {
-                            timeZone: 'Asia/Kolkata',
-                            day: 'numeric',
-                            month: 'long',
-                            year: 'numeric',
-                            hour: 'numeric',
-                            minute: '2-digit',
-                            hour12: true
-                          })
-                          :
-                          "-"}
+                      <div className="text-sm flex justify-between">
+                        <span className="text-medium text-gray-500">Created at:</span>
+                        {selectedLead.created_at ? (
+                          (() => {
+                            const createdAt = selectedLead.created_at;
+                            const standardizedDate = createdAt.match(/(Z|[+-]\d{2}:\d{2})$/)
+                              ? createdAt
+                              : `${createdAt}Z`;
+                            return new Date(standardizedDate).toLocaleString('en-IN', {
+                              timeZone: 'Asia/Kolkata',
+                              day: 'numeric',
+                              month: 'long',
+                              year: 'numeric',
+                              hour: 'numeric',
+                              minute: '2-digit',
+                              hour12: true,
+                            });
+                          })()
+                        ) : (
+                          "-"
+                        )}
                       </div>
                     </CardContent>
                   </Card>
@@ -654,7 +662,7 @@ export default function LeadManagement() {
                           {showExpandButton && (
                             <button
                               onClick={() => setExpanded(!expanded)}
-                              className="mt-3 flex items-center gap-1 text-xs text-blue-600 hover:underline focus:outline-none"
+                              className="mt-3 flex items-center gap-1 text-xs text-gray-200 hover:underline focus:outline-none"
                             >
                               {expanded ? (
                                 <>

@@ -39,11 +39,11 @@ export const createTeamMemberColumns = ({
   onEdit,
   onDelete,
 }: ColumnsProps): ColumnDef<TeamMember>[] => [
-  {
-    accessorKey: "username",
-    header: "Username",
-    cell: ({ row }) => row.original.username,
-  },
+  // {
+  //   accessorKey: "username",
+  //   header: "Username",
+  //   cell: ({ row }) => row.original.username,
+  // },
   {
     accessorKey: "first_name",
     header: "First Name",

@@ -6,6 +6,7 @@ import { ThemeProvider } from "@/components/theme-provider"
 import { GlobalLoadingProvider } from "@/components/global-loading-provider"
 import { NavigationWrapper } from "@/components/navigation-wrapper"
 import { QueryProvider } from "@/providers/query-provider"
+import { Toaster } from "@/components/ui/sonner"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -29,6 +30,7 @@ export default function RootLayout({
             </GlobalLoadingProvider>
           </ThemeProvider>
         </QueryProvider>
+        <Toaster position="top-right" richColors />
       </body>
     </html>
   )

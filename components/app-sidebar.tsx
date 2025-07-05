@@ -22,6 +22,7 @@ import {
 } from "lucide-react"
 import { useTheme } from "next-themes"
 import { useAuth } from "@/hooks/use-auth"
+import { BsBuildingAdd } from "react-icons/bs";
 
 import {
   Sidebar,
@@ -120,6 +121,7 @@ const data = {
   ],
     adminItems: [
       { title: "User Management", url: "/admin/users", icon: UsersRound, items: [] },
+      { title: "Add Company", url: "/admin/company", icon: BsBuildingAdd, items: [] },
     ]
 }
 
@@ -146,7 +148,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   if (!user) {
     return <SidebarSkeleton />
   }
-
 
   return (
     <Sidebar collapsible="icon" {...props}>
@@ -187,13 +188,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </SidebarGroupContent>
         </SidebarGroup>
 
-       <SidebarGroup>
+        <SidebarGroup>
           <SidebarGroupLabel>Administration</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {data.adminItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
+                  <SidebarMenuButton asChild isActive={isNavItemActive(item.url)}>
                     <a href={item.url}>
                       <item.icon />
                       <span>{item.title}</span>

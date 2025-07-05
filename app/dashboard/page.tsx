@@ -199,7 +199,7 @@ export default function Dashboard() {
                 </CardContent>
               </Card>
 
-              <Card>
+              {/* <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Pipeline Value</CardTitle>
                   <BarChart3 className="h-4 w-4 text-muted-foreground" />
@@ -208,7 +208,7 @@ export default function Dashboard() {
                   <div className="text-2xl font-bold">$2.4M</div>
                   <p className="text-xs text-muted-foreground">+5% from last month</p>
                 </CardContent>
-              </Card>
+              </Card> */}
             </div>
 
             {/* <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">

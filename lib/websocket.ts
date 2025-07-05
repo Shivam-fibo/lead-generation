@@ -175,7 +175,7 @@ export function useWebSocketConnection() {
 
   setTimeout(() => {
     const check = websocketService.getConnectionStatus();
-    console.log('check', check)
+    // console.log('check', check)
   }, 1000);
 
   useEffect(() => {
