@@ -341,8 +341,6 @@ export default function LeadManagement() {
     // toast.success('New lead received!')
   }
 
-  console.log('editingLead:', editingLead)
-
   // useEffect(() => {
   //   if (!authLoading) {
   //     if (!user || !isAuthenticated) {
@@ -662,7 +660,7 @@ export default function LeadManagement() {
                           {showExpandButton && (
                             <button
                               onClick={() => setExpanded(!expanded)}
-                              className="mt-3 flex items-center gap-1 text-xs text-gray-200 hover:underline focus:outline-none"
+                              className="mt-3 flex items-center gap-1 text-xs text-gray-900 dark:text-gray-200 hover:underline focus:outline-none"
                             >
                               {expanded ? (
                                 <>

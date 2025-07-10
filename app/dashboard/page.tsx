@@ -23,13 +23,19 @@ import {
   Bot,
   Sparkles,
   MapPin,
-  Calendar
+  Calendar,
+  Flame,
+  LucideSnowflake,
+  Phone
 } from "lucide-react"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import { Bar, BarChart, Line, LineChart, XAxis, YAxis } from "recharts"
 import { useAuthStore } from "@/stores/auth-store"
 import { useQueryClient } from "@tanstack/react-query"
 import { Badge } from "@/components/ui/badge"
+import { useDashboard } from "@/hooks/use-dashboard"
+import { formatDistanceToNowStrict } from "date-fns";
+import { DateTime } from "luxon";
 
 interface User {
   id: number
@@ -38,101 +44,44 @@ interface User {
   name: string
 }
 
-// Mock data for charts
-const chartData = [
-  { month: "Jan", completed: 12, assigned: 20 },
-  { month: "Feb", completed: 18, assigned: 25 },
-  { month: "Mar", completed: 22, assigned: 30 },
-  { month: "Apr", completed: 28, assigned: 35 },
-  { month: "May", completed: 32, assigned: 40 },
-  { month: "Jun", completed: 38, assigned: 45 },
-]
-
-const activityData = [
-  { day: "Mon", tasks: 12 },
-  { day: "Tue", tasks: 19 },
-  { day: "Wed", tasks: 15 },
-  { day: "Thu", tasks: 25 },
-  { day: "Fri", tasks: 22 },
-  { day: "Sat", tasks: 8 },
-  { day: "Sun", tasks: 5 },
-]
-
-const chartConfig = {
-  completed: {
-    label: "Completed",
-    color: "hsl(var(--chart-1))",
-  },
-  assigned: {
-    label: "Assigned",
-    color: "hsl(var(--chart-2))",
-  },
-  tasks: {
-    label: "Tasks",
-    color: "hsl(var(--chart-3))",
-  },
+const StatusBadge = ({ lead }: { lead: String }) => {
+  let status;
+  if (lead === "Cold") {
+    status = false;
+  } else if (lead === "Hot") {
+    status = true
+  } else {
+    status = false;
+  }
+  const getStatusStyle = (status: boolean) => {
+    if (status) {
+      return "bg-red-50 text-red-700 border border-red-200 hover:bg-red-100"
+    } else {
+      return "bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100"
+    }
+  }
+  return (
+    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium transition-colors ${getStatusStyle(status)}`}>
+      {status ? (
+        <>
+          <Flame className="h-3.5 w-3.5 mr-0.5" />
+          <span> Hot </span>
+        </>
+      ) : (
+        <>
+          <LucideSnowflake className="h-3.5 w-3.5 mr-0.5" />
+          <span> Cold </span>
+        </>
+      )}
+    </span>
+  )
 }
 
-
-const recentLeads = [
-  {
-    id: 1,
-    name: "Sarah Johnson",
-    email: "sarah@company.com",
-    status: "new",
-    source: "Website",
-    value: "$50,000",
-    createdAt: "2 hours ago"
-  },
-  {
-    id: 2,
-    name: "Michael Chen",
-    email: "m.chen@tech.com",
-    status: "qualified",
-    source: "Referral",
-    value: "$75,000",
-    createdAt: "5 hours ago"
-  },
-  {
-    id: 3,
-    name: "Emma Davis",
-    email: "emma.davis@startup.io",
-    status: "contacted",
-    source: "Social Media",
-    value: "$25,000",
-    createdAt: "1 day ago"
-  }
-]
-
-
-
-const upcomingVisits = [
-  {
-    id: 1,
-    leadName: "Sarah Johnson",
-    date: "Today, 2:00 PM",
-    location: "Downtown Office",
-    type: "Initial Consultation"
-  },
-  {
-    id: 2,
-    leadName: "Michael Chen",
-    date: "Tomorrow, 10:00 AM",
-    location: "Client Site",
-    type: "Property Tour"
-  }
-]
-
-const statusColors = {
-  new: "bg-blue-100 text-blue-800",
-  contacted: "bg-yellow-100 text-yellow-800",
-  qualified: "bg-green-100 text-green-800",
-  proposal: "bg-purple-100 text-purple-800"
-}
 
 
 export default function Dashboard() {
   const { user } = useAuthStore()
+  const { data: dashboardData, isLoading } = useDashboard()
   const [isPageLoading, setIsPageLoading] = useState(false)
   const router = useRouter()
 
@@ -153,10 +102,11 @@ export default function Dashboard() {
   // const canCreateGoals = user.roles[0].name === "CEO" || user.roles[0].name === "Admin"
   // const canUseAI = userRole === "CEO" || userRole === "Admin" || userRole === "Team Leader"
 
+
   return (
     <PageWrapper>
       <DashboardLayout>
-        {isPageLoading ? (
+        {isLoading ? (
           <DashboardSkeleton />
         ) : (
           <div className="space-y-6">
@@ -168,23 +118,23 @@ export default function Dashboard() {
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Active Leads</CardTitle>
-                  <Users className="h-4 w-4 text-muted-foreground" />
+                  <CardTitle className="text-sm font-medium">Hot Leads</CardTitle>
+                  <Flame className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">12</div>
-                  <p className="text-xs text-muted-foreground">+2 from last week</p>
+                  <div className="text-2xl font-bold">{dashboardData?.stats?.hotLeads || 0}</div>
+                  <p className="text-xs text-muted-foreground">This month</p>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Team Leads</CardTitle>
+                  <CardTitle className="text-sm font-medium">Total Leads</CardTitle>
                   <TrendingUp className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">24</div>
-                  <p className="text-xs text-muted-foreground">Across 4 departments</p>
+                  <div className="text-2xl font-bold">{dashboardData?.stats?.totalLeadsThisMonth || 0}</div>
+                  <p className="text-xs text-muted-foreground">Across all lead sources </p>
                 </CardContent>
               </Card>
 
@@ -194,21 +144,21 @@ export default function Dashboard() {
                   <MapPin className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">89</div>
+                  <div className="text-2xl font-bold">{dashboardData?.stats?.totalSiteVisitsThisMonth || 0}</div>
                   <p className="text-xs text-muted-foreground">This month</p>
                 </CardContent>
               </Card>
 
-              {/* <Card>
+              <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Pipeline Value</CardTitle>
+                  <CardTitle className="text-sm font-medium">Total Site Visits</CardTitle>
                   <BarChart3 className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">$2.4M</div>
-                  <p className="text-xs text-muted-foreground">+5% from last month</p>
+                  <div className="text-2xl font-bold">{dashboardData?.stats?.totalSiteVisits || 0}</div>
+                  <p className="text-xs text-muted-foreground">Booked by leads so far</p>
                 </CardContent>
-              </Card> */}
+              </Card>
             </div>
 
             {/* <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
@@ -301,26 +251,37 @@ export default function Dashboard() {
                 <CardHeader>
                   <CardTitle className="flex items-center justify-between">
                     Recent Leads
-                    <Button variant="outline" size="sm">View All</Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => router.push("/leads")}
+                    >
+                      View All
+                    </Button>
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
+
                   <div className="space-y-4">
-                    {recentLeads.map((lead) => (
-                      <div key={lead.id} className="flex items-center justify-between p-3 border border-border rounded-lg">
+                    {dashboardData?.recentLeads?.map((lead) => (
+                      <div key={lead._id} className="flex items-center justify-between p-3 border border-border rounded-lg">
                         <div className="space-y-1">
-                          <p className="font-medium text-foreground">{lead.name}</p>
-                          <p className="text-sm text-muted-foreground">{lead.email}</p>
+                          <div className="flex gap-1">
+                            <p className="font-medium text-foreground">{lead.first_name}</p>
+                            <p className="font-medium text-foreground">{lead.last_name}</p>
+                          </div>
+                          <p className="text-sm text-muted-foreground">{lead.project_name}</p>
                           <div className="flex items-center gap-2">
-                            <Badge className={statusColors[lead.status as keyof typeof statusColors]} variant="secondary">
-                              {lead.status}
-                            </Badge>
-                            <span className="text-xs text-muted-foreground">{lead.source}</span>
+                            <StatusBadge lead={lead.lead_type} />
+                            {/* <span className="text-xs text-muted-foreground">{lead.requirement}</span> */}
                           </div>
                         </div>
                         <div className="text-right">
-                          <p className="font-medium text-foreground">{lead.value}</p>
-                          <p className="text-xs text-muted-foreground">{lead.createdAt}</p>
+                          <p className="font-medium text-foreground">{lead.requirement}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {formatDistanceToNowStrict(new Date(lead.created_at), { addSuffix: true })}
+                          </p>
+
                         </div>
                       </div>
                     ))}
@@ -333,7 +294,11 @@ export default function Dashboard() {
                 <CardHeader>
                   <CardTitle className="flex items-center justify-between">
                     Upcoming Site Visits
-                    <Button variant="outline" size="sm">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => router.push("/site-visits")}
+                    >
                       <Calendar className="mr-2 h-4 w-4" />
                       Schedule Visit
                     </Button>
@@ -341,24 +306,59 @@ export default function Dashboard() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {upcomingVisits.map((visit) => (
-                      <div key={visit.id} className="flex items-center justify-between p-3 border border-border rounded-lg">
-                        <div className="space-y-1">
-                          <p className="font-medium text-foreground">{visit.leadName}</p>
-                          <p className="text-sm text-muted-foreground">{visit.type}</p>
-                          <p className="text-xs text-muted-foreground flex items-center gap-1">
-                            <MapPin className="h-3 w-3" />
-                            {visit.location}
-                          </p>
+                    {dashboardData?.upcomingSiteVisits?.map((visit) => {
+                      // Handle formatting using Luxon
+                      const raw = visit.visit_booking_datetime;
+                      let formattedVisitTime = "Invalid date";
+
+                      if (raw && raw !== "Not specified") {
+                        const parsed = DateTime.fromFormat(raw, "cccc, dd LLLL yyyy 'at' hh:mm a", {
+                          zone: "Asia/Kolkata",
+                        });
+
+                        if (parsed.isValid) {
+                          const now = DateTime.now().setZone("Asia/Kolkata");
+                          const tomorrow = now.plus({ days: 1 });
+
+                          const isTomorrow = parsed.hasSame(tomorrow, "day") && parsed.hasSame(tomorrow, "month");
+
+                          formattedVisitTime = isTomorrow
+                            ? `Tomorrow, ${parsed.toFormat("hh:mm a")}`
+                            : `${parsed.toFormat("cccc")}, ${parsed.toFormat("hh:mm a")}`;
+                        }
+                      }
+
+                      return (
+                        <div
+                          key={visit._id}
+                          className="flex items-center justify-between p-3 border border-border rounded-lg"
+                        >
+                          <div className="space-y-1">
+                            <div className="flex gap-1">
+                              <p className="font-medium text-foreground">{visit.first_name}</p>
+                              <p className="font-medium text-foreground">{visit.last_name}</p>
+                            </div>
+                            <p className="text-sm text-muted-foreground">{visit.requirement}</p>
+                            <p className="text-xs text-muted-foreground flex items-center gap-1">
+                              <Phone className="h-3 w-3" />
+                              {visit.contact_number}
+                            </p>
+                          </div>
+
+                          <div className="text-right">
+                            <p className="font-medium text-foreground">{formattedVisitTime}</p>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="mt-1"
+                              onClick={() => router.push("/site-visits")}
+                            >
+                              View Details
+                            </Button>
+                          </div>
                         </div>
-                        <div className="text-right">
-                          <p className="font-medium text-foreground">{visit.date}</p>
-                          <Button variant="outline" size="sm" className="mt-1">
-                            View Details
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </CardContent>
               </Card>

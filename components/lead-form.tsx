@@ -39,7 +39,7 @@ interface LeadFormProps {
 
 export default function LeadForm({ initialData, onSubmit, onCancel, isEditing = false }: LeadFormProps) {
   const [formData, setFormData] = useState<Omit<Lead, "id" | "createdAt">>({
-    name: initialData?.name || "",
+    name: initialData?.first_name || "",
     email: initialData?.email || "",
     phone: initialData?.phone || "",
     status: initialData?.status || "Warm",
@@ -52,6 +52,9 @@ export default function LeadForm({ initialData, onSubmit, onCancel, isEditing = 
     callSummary: initialData?.callSummary || "",
     followUpReason: initialData?.followUpReason || "",
   })
+
+  console.log('isEditing', isEditing)
+  console.log('initialData', initialData)
 
   const [siteVisitDate, setSiteVisitDate] = useState<Date | undefined>(
     initialData?.siteVisit ? new Date(initialData.siteVisit) : undefined

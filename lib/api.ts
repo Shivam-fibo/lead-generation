@@ -1,11 +1,27 @@
 // API Configuration
 // const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_LOCAL_URL
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
-// const API_BASE_URL = "https://satyasankalpdevelopers-ai-voice-agent-1.onrender.com/api"
+
 // const API_BASE_URL = "http://localhost:5000/api"
 
+// Define custom URLs for specific endpoints
+const CUSTOM_ENDPOINTS = {
+  '/manual-lead-entry': process.env.NEXT_PUBLIC_API_PYTHON_URL,
+  '/edit-lead': process.env.NEXT_PUBLIC_API_PYTHON_URL,
+}
 
-const buildUrl = (endpoint: string) => `${API_BASE_URL}${endpoint}`
+const buildUrl = (endpoint: string) => {
+  const customUrl = CUSTOM_ENDPOINTS[endpoint as keyof typeof CUSTOM_ENDPOINTS]
+
+  if (customUrl) {
+    return `${customUrl}${endpoint}`
+  }
+
+  // Use default base URL
+  return `${API_BASE_URL}${endpoint}`
+}
+
+// const buildUrl = (endpoint: string) => `${API_BASE_URL}${endpoint}`
 
 const getAuthToken = () => localStorage.getItem('authToken')
 
@@ -285,4 +301,28 @@ export const teamApi = {
     }
   },
 
+}
+
+export const dashboardApi = {
+  getDashboardData: async (): Promise<any> => {
+    try {
+      const response = await fetchApi<{ data: any }>(`/dashboard-data`);
+      if (!response) return null;
+      return response
+    } catch (error) {
+      throw error;
+    }
+  },
+}
+
+export const siteVisitsApi = {
+  getSiteVisits: async (): Promise<any> => {
+    try {
+      const response = await fetchApi<{ data: any }>(`/site-visits`);
+      if (!response) return null;
+      return response
+    } catch (error) {
+      throw error;
+    }
+  },
 }
