@@ -5,6 +5,7 @@ import React from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useTeamStore } from "@/stores/team-store"
 import { teamApi, type TeamMember, type TeamMemberPublic } from "@/lib/api"
+import { toast } from "sonner"
 
 export const useTeamMemberList = () => {
   const {
@@ -40,36 +41,59 @@ export function useTeam() {
   const addMemberMutation = useMutation({
     mutationFn: (member: Omit<TeamMember, "_id">) => teamApi.addTeamMember(member),
     onSuccess: (newMember) => {
-      addMember(newMember)
+      toast.success(`User '${newMember[0].firstName || ""}' created successfully!`)
+      // addMember(newMember)
       queryClient.invalidateQueries({ queryKey: ["teamMembers"] })
     },
+    onError: (error: any) => {
+      toast.error('Error creating user', {
+        description: error?.message ? error?.message : error,
+      })
+    }
   })
 
   const updateMemberMutation = useMutation({
     mutationFn: ({ id, member }: { id: string; member: Partial<TeamMember> }) =>
       teamApi.updateTeamMember(id, member),
     onSuccess: (updatedMember) => {
-      // Update store with the full updated member from API response
-      updateMember(updatedMember._id, updatedMember)
+      toast.success(`User '${updatedMember[0].firstName || ""}' updated successfully!`)
+      // updateMember(updatedMember._id, updatedMember)
       queryClient.invalidateQueries({ queryKey: ["teamMembers"] })
     },
+    onError: (error: any) => {
+      toast.error('Error creating user', {
+        description: error?.message ? error?.message : error,
+      })
+    }
   })
 
   const deleteMemberMutation = useMutation({
     mutationFn: (id: string) => teamApi.deleteTeamMember(id),
     onSuccess: (_, id) => {
-      removeMember(id)
+      toast.success(`User deleted successfully!`)
+      // removeMember(id)
       queryClient.invalidateQueries({ queryKey: ["teamMembers"] })
     },
+    onError: (error: any) => {
+      toast.error('Error deleting user', {
+        description: error?.message ? error?.message : error,
+      })
+    }
   })
 
   const addMembersCsvMutation = useMutation({
     mutationFn: (members: Omit<TeamMember, "_id">[]) => teamApi.addTeamMembersCsv(members),
     onSuccess: (newMembers) => {
+      toast.success(`Users added successfully!`)
       // Add all new members to the store
-      newMembers.forEach(member => addMember(member));
+      // newMembers.forEach(member => addMember(member));
       queryClient.invalidateQueries({ queryKey: ["teamMembers"] });
     },
+    onError: (error: any) => {
+      toast.error('Error deleting user', {
+        description: error?.message ? error?.message : error,
+      })
+    }
   });
 
   // Update store when query data changes

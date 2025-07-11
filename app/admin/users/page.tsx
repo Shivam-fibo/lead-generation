@@ -57,24 +57,35 @@ export default function LeadManagement() {
 
   console.log('editingMember:', editingMember)
 
-//   useEffect(() => {
-//     if (!authLoading) {
-//       if (!user || !isAuthenticated) {
-//         console.log('No authenticated user, redirecting to login')
-//         router.push("/")
-//         return
-//       }
+  //   useEffect(() => {
+  //     if (!authLoading) {
+  //       if (!user || !isAuthenticated) {
+  //         console.log('No authenticated user, redirecting to login')
+  //         router.push("/")
+  //         return
+  //       }
 
-//       if (user.role !== "Admin") {
-//         console.log('User is not admin, redirecting to dashboard')
-//         router.push("/dashboard")
-//         return
-//       }
-//     }
-//   }, [authLoading, router, user, isAuthenticated])
+  //       if (user.role !== "Admin") {
+  //         console.log('User is not admin, redirecting to dashboard')
+  //         router.push("/dashboard")
+  //         return
+  //       }
+  //     }
+  //   }, [authLoading, router, user, isAuthenticated])
 
-  const handleAddMember = (memberData: Omit<TeamMember, "_id">) => {
-    addTeamMember(memberData);
+  const handleAddMember = (memberData: any) => {
+    let payload = {
+      username: memberData.username,
+      firstName: memberData.first_name,
+      lastName: memberData.last_name,
+      phoneNo: memberData.number,
+      email: memberData.email,
+      password: memberData.password,
+      role: memberData.roles[0].name,
+      projects: [memberData.projects[0]._id],
+      companyId: user?.companyId,
+    }
+    addTeamMember(payload);
     setShowAddDialog(false);
   }
 
@@ -98,30 +109,39 @@ export default function LeadManagement() {
       const lines = csv.split("\n").filter(line => line.trim())
       const members: Omit<TeamMember, "_id">[] = []
 
-      // Skip header row
       for (let i = 1; i < lines.length; i++) {
         const values = lines[i].match(/(?:\"([^\"]*)\"|([^,]+))/g)?.map(v =>
           v.trim().replace(/^"|"$/g, '').trim()
         ) || []
 
-        if (values.length >= 6) {
+        if (values.length >= 8) {
           try {
-            const roleId = values[5] || "68381f3578431cf9a9e1bba5" // Default to Team Member role if not specified
-            const roleName = "Team Member" // Default role name
+            const username = values[0]
+            const email = values[1]
+            const firstName = values[2]
+            const lastName = values[3]
+            const phoneNo = values[4]
+            const roles = [values[5]] 
+            const password = values[6] || 'default123'
+            const projects = values[7]?.split(',').map(p => p.trim()) || []
 
             const newMember = {
-              username: values[0],
-              email: values[1],
-              first_name: values[2],
-              last_name: values[3],
-              number: values[4],
-              roles: [{ _id: roleId, name: roleName }],
-              password: values[6] || 'default123',
+              username,
+              email,
+              firstName,
+              lastName,
+              phoneNo,
+              roles,
+              password,
+              projects,
             }
+
             members.push(newMember)
           } catch (error) {
             console.error(`Error processing line ${i + 1}:`, error)
           }
+        } else {
+          console.warn(`Skipped line ${i + 1} due to insufficient fields`)
         }
       }
 
@@ -129,9 +149,11 @@ export default function LeadManagement() {
         addMembersCsv(members)
       }
     }
+
     reader.onerror = (error) => {
       console.error('Error reading CSV file:', error)
     }
+
     reader.readAsText(file)
   }
 
@@ -147,8 +169,8 @@ export default function LeadManagement() {
         <div className="space-y-6">
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Team Management</h1>
-              <p className="text-gray-600 dark:text-gray-400">Manage your team members, roles, and skills</p>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">User Management</h1>
+              <p className="text-gray-600 dark:text-gray-400">Manage your team members</p>
             </div>
             <div className="flex space-x-2">
               <Button variant="outline" onClick={() => document.getElementById("csv-upload")?.click()}>

@@ -100,12 +100,12 @@ export default function LoginForm() {
             />
           </div>
           <div className="grid gap-2">
-            <div className="flex items-center">
+            {/* <div className="flex items-center">
               <Label htmlFor="password">Password</Label>
               <Link href="/forgot-password" className="ml-auto inline-block text-sm underline">
                 Forgot your password?
               </Link>
-            </div>
+            </div> */}
             <Input
               id="password"
               type="password"
@@ -124,23 +124,23 @@ export default function LoginForm() {
           </Button>
         </form>
 
-        <div className="relative">
+        {/* <div className="relative">
           <div className="absolute inset-0 flex items-center">
             <span className="w-full border-t" />
           </div>
           <div className="relative flex justify-center text-xs uppercase">
             <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
           </div>
-        </div>
+        </div> */}
 
         {/* <div className="grid grid-cols-2 gap-2"> */}
         <div className="flex justify-center items-center">
           {/* <Button variant="outline" size="sm" onClick={() => handleQuickLogin("CEO")} disabled={isLoading}>
             CEO Demo
           </Button> */}
-          <Button variant="outline" size="sm" onClick={() => handleQuickLogin("Admin")} disabled={isLoading}>
+          {/* <Button variant="outline" size="sm" onClick={() => handleQuickLogin("Admin")} disabled={isLoading}>
             Quick Login
-          </Button>
+          </Button> */}
           {/* <Button variant="outline" size="sm" onClick={() => handleQuickLogin("Team Leader")} disabled={isLoading}>
             Leader Demo
           </Button>

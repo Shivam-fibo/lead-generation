@@ -84,7 +84,8 @@ export const createTeamMemberColumns = ({
               <AlertDialogHeader>
                 <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  This action cannot be undone. This will permanently delete {member.first_name} from the team.
+                  This action cannot be undone. This will permanently delete 
+                  the user, &nbsp;<strong>{member.firstName}</strong>.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>

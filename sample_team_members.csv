@@ -1,6 +1,0 @@
-username,email,first_name,last_name,number,roles,password
-johndoe,john.doe@example.com,John,Doe,+1234567890,"68381f3578431cf9a9e1bba5",pass123
-janewilson,jane.wilson@example.com,Jane,Wilson,+1234567891,"68381f3578431cf9a9e1bba5",pass123
-bobsmith,bob.smith@example.com,Bob,Smith,+1234567892,"68381f3578431cf9a9e1bba5",pass123
-sarahjones,sarah.jones@example.com,Sarah,Jones,+1234567893,"68381f3578431cf9a9e1bba5",pass123
-mikebrown,mike.brown@example.com,Mike,Brown,+1234567894,"68381f3578431cf9a9e1bba5",pass123

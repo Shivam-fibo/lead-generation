@@ -120,8 +120,8 @@ const data = {
     },
   ],
     adminItems: [
-      { title: "User Management", url: "/admin/users", icon: UsersRound, items: [] },
-      { title: "Add Company", url: "/admin/company", icon: BsBuildingAdd, items: [] },
+      { title: "Users", url: "/admin/users", icon: UsersRound, items: [] },
+      { title: "Add Company", url: "/admin/company", icon: BsBuildingAdd, items: [], requiresSuperAdmin: true },
     ]
 }
 
@@ -148,6 +148,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   if (!user) {
     return <SidebarSkeleton />
   }
+
+  // Filter admin items based on user role
+  const filteredAdminItems = data.adminItems.filter(item => {
+    if (item.requiresSuperAdmin) {
+      return user.role === "SuperAdmin"
+    }
+    return true
+  })
 
   return (
     <Sidebar collapsible="icon" {...props}>
@@ -188,11 +196,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <SidebarGroup>
+        {user.role !== "CompanyEmployee" && filteredAdminItems.length > 0 && ( 
+          <SidebarGroup>
           <SidebarGroupLabel>Administration</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {data.adminItems.map((item) => (
+              {filteredAdminItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild isActive={isNavItemActive(item.url)}>
                     <a href={item.url}>
@@ -204,7 +213,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               ))}
             </SidebarMenu>
           </SidebarGroupContent>
-        </SidebarGroup> 
+        </SidebarGroup>)} 
+
       </SidebarContent>
 
       <SidebarFooter>

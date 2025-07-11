@@ -269,7 +269,7 @@ export const teamApi = {
 
   addTeamMembersCsv: async (members: Omit<TeamMember, "_id">[]): Promise<TeamMember[]> => {
     try {
-      const response = await fetchApi<{ users: TeamMember[] }>('/csv-add-member', {
+      const response = await fetchApi<{ users: TeamMember[] }>('/csv-add-users', {
         method: 'POST',
         body: JSON.stringify({ users: members })
       });
@@ -294,7 +294,8 @@ export const teamApi = {
   deleteTeamMember: async (id: string): Promise<void> => {
     try {
       await fetchApi(`/user/${id}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        body: JSON.stringify(id) // this is to avoid fastify body error
       });
     } catch (error) {
       throw error;
@@ -319,6 +320,28 @@ export const siteVisitsApi = {
   getSiteVisits: async (): Promise<any> => {
     try {
       const response = await fetchApi<{ data: any }>(`/site-visits`);
+      if (!response) return null;
+      return response
+    } catch (error) {
+      throw error;
+    }
+  },
+}
+
+export const projectsApi = {
+  getProjects: async (userId?: string): Promise<any> => {
+    try {
+      // If userId is not provided, get it from localStorage
+      if (!userId) {
+        const currentUser = getUserFromLocalStorage()
+        userId = currentUser?.id || currentUser?._id
+      }
+      
+      if (!userId) {
+        throw new Error('User ID is required')
+      }
+
+      const response = await fetchApi<{ data: any }>(`/project-list/${userId}`);
       if (!response) return null;
       return response
     } catch (error) {
