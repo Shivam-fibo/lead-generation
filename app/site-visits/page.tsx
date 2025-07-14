@@ -320,24 +320,24 @@ export default function SiteVisitManagement() {
     onDelete: handleDeleteLead,
   })
 
-    const parsedConversations = React.useMemo(() => {
-      if (!selectedSiteVisit?.llm_refined_conversation_history) return [];
-  
-      const conversationData = selectedSiteVisit.llm_refined_conversation_history;
-  
-      // Check if it's an array (new format)
-      if (Array.isArray(conversationData)) {
-        return processConversationArray(conversationData);
-      }
-  
-      // If it's a string (old format), use the string parsing function
-      if (typeof conversationData === 'string') {
-        return extractJsObjectFromConvoString(conversationData);
-      }
-  
-      return [];
-    }, [selectedSiteVisit?.llm_refined_conversation_history]);
-  
+  const parsedConversations = React.useMemo(() => {
+    if (!selectedSiteVisit?.llm_refined_conversation_history) return [];
+
+    const conversationData = selectedSiteVisit.llm_refined_conversation_history;
+
+    // Check if it's an array (new format)
+    if (Array.isArray(conversationData)) {
+      return processConversationArray(conversationData);
+    }
+
+    // If it's a string (old format), use the string parsing function
+    if (typeof conversationData === 'string') {
+      return extractJsObjectFromConvoString(conversationData);
+    }
+
+    return [];
+  }, [selectedSiteVisit?.llm_refined_conversation_history]);
+
 
 
   const hasConversations = parsedConversations.length > 0;
@@ -478,7 +478,20 @@ export default function SiteVisitManagement() {
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-gray-600 text-sm">Visit Date :</span>
-                        <span className="font-medium text-sm">{selectedSiteVisit?.visit_booking_datetime}</span>
+                        <span className="font-medium text-sm">
+                          {selectedSiteVisit?.visit_booking_datetime
+                            ? new Date(selectedSiteVisit.visit_booking_datetime).toLocaleString('en-IN', {
+                              timeZone: 'Asia/Kolkata',
+                              weekday: 'long',
+                              day: '2-digit',
+                              month: 'long',
+                              year: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit',
+                              hour12: true,
+                            }).replace(',', ' at')
+                            : 'Not scheduled'}
+                        </span>
                       </div>
                       {/* <div className="flex justify-between items-center">
                         <span className="text-gray-600 text-sm">Visit Status :</span>

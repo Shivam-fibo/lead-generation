@@ -15,7 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { AlertCircle, Bot, CheckCircle, ChevronDown, ChevronUp, Flame, HelpCircle, Locate, LocateOff, LucideSnowflake, Pen, PhoneOff, Plus, Upload, User, XCircle } from "lucide-react"
 import { useAuthStore } from "@/stores/auth-store"
-import { useLeadList } from "@/hooks/use-leads"
+import { useLeadList, useLeads } from "@/hooks/use-leads"
 import LeadForm, { Lead } from "@/components/lead-form"
 // import { columns } from "./columns"
 import { createColumns } from "./columns"
@@ -41,7 +41,15 @@ interface AddTeamMember {
   roles: string[];
   password: string;
 }
-const StatusBadge = ({ status }: { status: boolean }) => {
+const StatusBadge = ({ lead }: { lead: String }) => {
+  let status;
+  if (lead === "Cold") {
+    status = false;
+  } else if (lead === "Hot") {
+    status = true
+  } else {
+    status = false;
+  }
   const getStatusStyle = (status: boolean) => {
     if (status) {
       return "bg-red-50 text-red-700 border border-red-200 hover:bg-red-100"
@@ -65,6 +73,7 @@ const StatusBadge = ({ status }: { status: boolean }) => {
     </span>
   )
 }
+
 
 const ReachedBadge = ({ HasReached }: { HasReached: boolean }) => {
   const style = HasReached
@@ -284,6 +293,15 @@ export default function LeadManagement() {
     isSuccess: isLeadSuccess
   } = useLeadList()
 
+  const {
+    addLead,
+    isAddingLead,
+    updateLead,
+    isUpdatingMember,
+    deleteLead,
+    isDeletingLead
+  } = useLeads()
+
   const [isExpanded, setIsExpanded] = useState(false);
   const toggleExpand = () => setIsExpanded(!isExpanded);
   const [expanded, setExpanded] = useState(false);
@@ -357,20 +375,21 @@ export default function LeadManagement() {
   //   }
   // }, [authLoading, router, user, isAuthenticated])
 
-  const handleAddLead = (memberData: Omit<TeamMember, "_id">) => {
-    // addTeamMember(memberData);
+  const handleAddLead = (leadData: any) => {
+    console.log('leadData', leadData)
+    addLead(leadData)
     setShowAddDialog(false);
   }
 
-  const handleEditLead = (memberData: Partial<TeamMember>) => {
+  const handleEditLead = (leadData: any) => {
     if (!editingLead?._id) return;
-    // updateTeamMember(editingLead._id, memberData);
+    updateLead(editingLead._id, leadData);
     setEditingLead(null);
     setShowEditDialog(false);
   }
 
   const handleDeleteLead = (id: string) => {
-    // deleteTeamMember(id)
+    deleteLead(id)
   }
 
   const handleEditClick = (member: TeamMember) => {
@@ -414,6 +433,108 @@ export default function LeadManagement() {
 
   console.log('selectedLead.created_at', selectedLead?.created_at)
 
+// Utility: CSV export function with UTF-8 BOM for Excel Unicode support
+const exportToCSV = (data, filename = 'leads_export.csv') => {
+  const headers = [
+    'First Name',
+    'Last Name',
+    'Contact Number',
+    'Email',
+    'Lead Type',
+    'Requirement',
+    'Project Name',
+    'Call Status',
+    'Visit Booking Date',
+    'Call Summary',
+    'Hot Lead',
+    'Call Priority',
+    'Reached',
+    'Created At',
+    'Updated At'
+  ];
+
+  const csvData = data.map(lead => [
+    lead.first_name || '',
+    lead.last_name || '',
+    lead.contact_number || '',
+    lead.email || '',
+    lead.lead_type || '',
+    lead.requirement || '',
+    lead.project_name || lead.projectName || '',
+    lead.call_connection_status || '',
+    lead.visit_booking_datetime ? new Date(lead.visit_booking_datetime).toLocaleString('en-IN', {
+      timeZone: 'Asia/Kolkata',
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true,
+    }) : '',
+    lead.call_summary || '',
+    lead.is_hot_lead ? 'Yes' : 'No',
+    lead.call_priority || '',
+    lead.reached ? 'Yes' : 'No',
+    lead.created_at || lead.createdAt ? new Date(lead.created_at || lead.createdAt).toLocaleString('en-IN', {
+      timeZone: 'Asia/Kolkata',
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true,
+    }) : '',
+    lead.updated_at || lead.updatedAt ? new Date(lead.updated_at || lead.updatedAt).toLocaleString('en-IN', {
+      timeZone: 'Asia/Kolkata',
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true,
+    }) : ''
+  ]);
+
+  const csvContent = [headers, ...csvData];
+
+  const csvString = csvContent.map(row =>
+    row.map(field => {
+      if (typeof field === 'string' && (field.includes(',') || field.includes('"') || field.includes('\n'))) {
+        return `"${field.replace(/"/g, '""')}"`;
+      }
+      return field;
+    }).join(',')
+  ).join('\n');
+
+  // Add UTF-8 BOM for Excel compatibility
+  const BOM = '\uFEFF';
+  const blob = new Blob([BOM + csvString], { type: 'text/csv;charset=utf-8;' });
+
+  const link = document.createElement('a');
+  if (link.download !== undefined) {
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', filename);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+};
+
+// Call this from your component with leads array
+const handleExportCSV = () => {
+  if (!leads || leads.length === 0) {
+    alert('No leads data to export');
+    return;
+  }
+
+  const timestamp = new Date().toISOString().split('T')[0];
+  const filename = `leads_export_${timestamp}.csv`;
+
+  exportToCSV(leads, filename);
+};
+
   return (
     <DashboardLayout>
       {isLeadLoading ? (
@@ -427,7 +548,8 @@ export default function LeadManagement() {
                 <p className="text-gray-600 dark:text-gray-400">Manage and track all your leads</p>
               </div>
               <div className="flex space-x-2">
-                <Button variant="outline" onClick={() => document.getElementById("csv-upload")?.click()}>
+                {/* <Button variant="outline" onClick={() => document.getElementById("csv-upload")?.click()}> */}
+                <Button variant="outline" onClick={handleExportCSV}>
                   <Upload className="mr-2 h-4 w-4" />
                   Export CSV
                 </Button>
@@ -576,19 +698,18 @@ export default function LeadManagement() {
                       <div className="flex justify-between items-center">
                         <span className="text-gray-500 text-sm">Site Visit:</span>
                         <span className="font-medium text-sm">
-                          {selectedLead.visit_booking_datetime ?
-                            selectedLead.visit_booking_datetime
-                            // new Date(selectedLead.site_visit).toLocaleString('en-IN', {
-                            //   timeZone: 'Asia/Kolkata',
-                            //   day: 'numeric',
-                            //   month: 'long',
-                            //   year: 'numeric',
-                            //   hour: 'numeric',
-                            //   minute: '2-digit',
-                            //   hour12: true
-                            // })
-                            :
-                            'Not scheduled'}
+                          {selectedLead.visit_booking_datetime
+                            ? new Date(selectedLead.visit_booking_datetime).toLocaleString('en-IN', {
+                              timeZone: 'Asia/Kolkata',
+                              weekday: 'long',
+                              day: '2-digit',
+                              month: 'long',
+                              year: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit',
+                              hour12: true,
+                            }).replace(',', ' at')
+                            : 'Not scheduled'}
                         </span>
                       </div>
                       <div className="flex justify-between items-center">

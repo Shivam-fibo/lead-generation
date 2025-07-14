@@ -277,7 +277,7 @@ export default function Dashboard() {
                           </div>
                         </div>
                         <div className="text-right">
-                          <p className="font-medium text-foreground">{lead.requirement}</p>
+                          <p className="font-medium text-foreground">{lead.requirement ? lead.requirement : "-"}</p>
                           <p className="text-xs text-muted-foreground">
                             {formatDistanceToNowStrict(new Date(lead.created_at), { addSuffix: true })}
                           </p>
@@ -307,14 +307,11 @@ export default function Dashboard() {
                 <CardContent>
                   <div className="space-y-4">
                     {dashboardData?.upcomingSiteVisits?.map((visit) => {
-                      // Handle formatting using Luxon
                       const raw = visit.visit_booking_datetime;
                       let formattedVisitTime = "Invalid date";
 
                       if (raw && raw !== "Not specified") {
-                        const parsed = DateTime.fromFormat(raw, "cccc, dd LLLL yyyy 'at' hh:mm a", {
-                          zone: "Asia/Kolkata",
-                        });
+                        const parsed = DateTime.fromISO(raw, { zone: "utc" }).setZone("Asia/Kolkata");
 
                         if (parsed.isValid) {
                           const now = DateTime.now().setZone("Asia/Kolkata");
@@ -327,6 +324,18 @@ export default function Dashboard() {
                             : `${parsed.toFormat("cccc")}, ${parsed.toFormat("hh:mm a")}`;
                         }
                       }
+
+                      // let temp = visit?.visit_booking_datetime ? new Date(visit.visit_booking_datetime).toLocaleString('en-IN', {
+                      //   timeZone: 'Asia/Kolkata',
+                      //   weekday: 'long',
+                      //   day: '2-digit',
+                      //   month: 'long',
+                      //   year: 'numeric',
+                      //   hour: '2-digit',
+                      //   minute: '2-digit',
+                      //   hour12: true,
+                      // }).replace(',', ' at')
+                      //   : 'Not scheduled'
 
                       return (
                         <div

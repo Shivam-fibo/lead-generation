@@ -99,15 +99,25 @@ export const createColumns = ({
       accessorKey: "schedule_datetime",
       header: "Date & Time",
       cell: ({ row }) => {
-        const Lead = row.original
+        const Lead = row.original;
+        const formattedDate = Lead?.visit_booking_datetime
+          ? new Date(Lead.visit_booking_datetime).toLocaleString('en-IN', {
+            timeZone: 'Asia/Kolkata',
+            weekday: 'long',
+            day: '2-digit',
+            month: 'long',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true,
+          }).replace(',', ' at')
+          : "-";
+
         return (
-          <div className="cursor-pointer" >
-            {Lead?.visit_booking_datetime
-              ? Lead?.visit_booking_datetime
-              : "-"
-            }
+          <div className="cursor-pointer">
+            {formattedDate}
           </div>
-        )
+        );
       },
     },
     {
@@ -137,7 +147,7 @@ export const createColumns = ({
         }
         return (
           <div>
-              <StatusBadge status={temp} />
+            <StatusBadge status={temp} />
           </div>
         )
       },

@@ -87,7 +87,7 @@ const CallImmediatelyBadge = ({ needsCall }: { needsCall: boolean }) => {
   } else {
     return (
       <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium transition-colors bg-slate-50 text-blue-800 border border-slate-200 hover:bg-slate-100">
-         <FaLongArrowAltDown height={"10px"} width={"10px"} color="#1e40af"/> Low
+        <FaLongArrowAltDown height={"10px"} width={"10px"} color="#1e40af" /> Low
       </span>
     )
   }
@@ -138,7 +138,7 @@ export const createColumns = ({
           temp = false;
         } else if (lead.lead_type === "Hot") {
           temp = true
-        } else { 
+        } else {
           temp = false;
         }
         return (
@@ -162,7 +162,7 @@ export const createColumns = ({
         )
       },
     },
-   
+
     {
       accessorKey: "reached",
       header: "Has Reached",
@@ -175,18 +175,25 @@ export const createColumns = ({
         )
       },
     },
-     {
+    {
       id: "visit_booking_datetime",
       header: "Site Visit Booking",
       cell: ({ row }) => {
-        const lead = row.original
-        console.log('lead.call_immediately', lead.visit_booking_datetime)
-        const needsCall = lead.call_immediately
-        return (
-          <div>
-            <span> {lead.visit_booking_datetime ? lead.visit_booking_datetime : "-"} </span>
-          </div>
-        )
+        const lead = row.original;
+        const rawDate = lead.visit_booking_datetime;
+        const formattedDate = rawDate
+          ? new Date(rawDate).toLocaleString("en-IN", {
+            timeZone: "Asia/Kolkata",
+            weekday: "long",
+            year: "numeric",
+            month: "long",
+            day: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: true,
+          }).replace(",", " at")
+          : "-";
+        return <div><span>{formattedDate}</span></div>;
       },
     },
     // {

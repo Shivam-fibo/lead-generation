@@ -8,6 +8,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
 const CUSTOM_ENDPOINTS = {
   '/manual-lead-entry': process.env.NEXT_PUBLIC_API_PYTHON_URL,
   '/edit-lead': process.env.NEXT_PUBLIC_API_PYTHON_URL,
+  '/delete-lead': process.env.NEXT_PUBLIC_API_PYTHON_URL,
 }
 
 const buildUrl = (endpoint: string) => {
@@ -150,12 +151,56 @@ export const leadsApi = {
 
   getLead: async (sessionId: string): Promise<any> => {
     try {
-      const response = await fetchApi<{ session: any }>(`/get-session?id=${sessionId}`);
+      const response = await fetchApi<{ session: any }>(``);
       return response;
     } catch (error) {
       throw error;
     }
   },
+
+  addLead: async (leadData: string): Promise<any> => {
+    try {
+      const response = await fetchApi<{ data: any }>('/manual-lead-entry', {
+        method: 'POST',
+        body: JSON.stringify(leadData),
+      })
+
+      console.log('response', response)
+
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  updateLead: async (id: string, data: any): Promise<any> => {
+    try {
+      const response = await fetchApi<{ lead: any }>(`/edit-lead`, {
+        method: 'PUT',
+        body: JSON.stringify(data)
+      });
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  deleteLead: async (lead_id: string): Promise<any> => {
+    try {
+      let temp = {
+        lead_id
+      }
+      const response = await fetchApi<{ lead: any }>(`/delete-lead`, {
+        method: 'DELETE',
+        body: JSON.stringify(temp)
+      });
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+
 }
 
 // export const companyApi = {
@@ -336,7 +381,7 @@ export const projectsApi = {
         const currentUser = getUserFromLocalStorage()
         userId = currentUser?.id || currentUser?._id
       }
-      
+
       if (!userId) {
         throw new Error('User ID is required')
       }
