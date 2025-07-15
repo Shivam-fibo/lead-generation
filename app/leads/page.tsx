@@ -671,7 +671,7 @@ const handleExportCSV = () => {
                       <div className="flex justify-between items-center">
                         <span className="text-gray-500 text-sm">Status:</span>
                         <div className="flex items-center gap-2">
-                          <StatusBadge status={selectedLead.lead_type} />
+                          <StatusBadge lead={selectedLead.lead_type} />
                         </div>
                       </div>
                       <div className="flex justify-between items-center">
