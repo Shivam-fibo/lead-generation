@@ -26,7 +26,9 @@ import {
   Calendar,
   Flame,
   LucideSnowflake,
-  Phone
+  Phone,
+  UserX,
+  CalendarX
 } from "lucide-react"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import { Bar, BarChart, Line, LineChart, XAxis, YAxis } from "recharts"
@@ -43,6 +45,41 @@ interface User {
   role: string
   name: string
 }
+const EmptyLeadsState = () => (
+  <div className="flex flex-col items-center justify-center py-8 text-center">
+    <UserX className="h-12 w-12 text-muted-foreground mb-4" />
+    <h3 className="text-lg font-medium text-foreground mb-2">No recent leads</h3>
+    <p className="text-sm text-muted-foreground mb-4">
+      There are no recent leads to display at the moment.
+    </p>
+    <Button
+      variant="outline"
+      size="sm"
+      onClick={() => window.location.href = "/leads"}
+    >
+      View All Leads
+    </Button>
+  </div>
+)
+
+// Empty state component for upcoming site visits
+const EmptySiteVisitsState = () => (
+  <div className="flex flex-col items-center justify-center py-8 text-center">
+    <CalendarX className="h-12 w-12 text-muted-foreground mb-4" />
+    <h3 className="text-lg font-medium text-foreground mb-2">No upcoming visits</h3>
+    <p className="text-sm text-muted-foreground mb-4">
+      There are no upcoming site visits scheduled.
+    </p>
+    <Button
+      variant="outline"
+      size="sm"
+      onClick={() => window.location.href = "/site-visits"}
+    >
+      <Calendar className="mr-2 h-4 w-4" />
+      Schedule Visit
+    </Button>
+  </div>
+)
 
 const StatusBadge = ({ lead }: { lead: String }) => {
   let status;
@@ -102,6 +139,11 @@ export default function Dashboard() {
   // const canCreateGoals = user.roles[0].name === "CEO" || user.roles[0].name === "Admin"
   // const canUseAI = userRole === "CEO" || userRole === "Admin" || userRole === "Team Leader"
 
+  // Check if recent leads exist and have data
+  const hasRecentLeads = dashboardData?.recentLeads && dashboardData.recentLeads.length > 0
+
+  // Check if upcoming site visits exist and have data
+  const hasUpcomingVisits = dashboardData?.upcomingSiteVisits && dashboardData.upcomingSiteVisits.length > 0
 
   return (
     <PageWrapper>
@@ -260,34 +302,35 @@ export default function Dashboard() {
                     </Button>
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
-
-                  <div className="space-y-4">
-                    {dashboardData?.recentLeads?.map((lead) => (
-                      <div key={lead._id} className="flex items-center justify-between p-3 border border-border rounded-lg">
-                        <div className="space-y-1">
-                          <div className="flex gap-1">
-                            <p className="font-medium text-foreground">{lead.first_name}</p>
-                            <p className="font-medium text-foreground">{lead.last_name}</p>
+<CardContent>
+                  {hasRecentLeads ? (
+                    <div className="space-y-4">
+                      {dashboardData.recentLeads.map((lead) => (
+                        <div key={lead._id} className="flex items-center justify-between p-3 border border-border rounded-lg">
+                          <div className="space-y-1">
+                            <div className="flex gap-1">
+                              <p className="font-medium text-foreground">{lead.first_name}</p>
+                              <p className="font-medium text-foreground">{lead.last_name}</p>
+                            </div>
+                            <p className="text-sm text-muted-foreground">{lead.project_name}</p>
+                            <div className="flex items-center gap-2">
+                              <StatusBadge lead={lead.lead_type} />
+                            </div>
                           </div>
-                          <p className="text-sm text-muted-foreground">{lead.project_name}</p>
-                          <div className="flex items-center gap-2">
-                            <StatusBadge lead={lead.lead_type} />
-                            {/* <span className="text-xs text-muted-foreground">{lead.requirement}</span> */}
+                          <div className="text-right">
+                            <p className="font-medium text-foreground">{lead.requirement ? lead.requirement : "-"}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {formatDistanceToNowStrict(new Date(lead.created_at), { addSuffix: true })}
+                            </p>
                           </div>
                         </div>
-                        <div className="text-right">
-                          <p className="font-medium text-foreground">{lead.requirement ? lead.requirement : "-"}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {formatDistanceToNowStrict(new Date(lead.created_at), { addSuffix: true })}
-                          </p>
-
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
+                      ))}
+                    </div>
+                  ) : (
+                    <EmptyLeadsState />
+                  )}
+                </CardContent>              
+                </Card>
 
               {/* Upcoming Site Visits */}
               <Card className="h-fit">
@@ -305,70 +348,62 @@ export default function Dashboard() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    {dashboardData?.upcomingSiteVisits?.map((visit) => {
-                      const raw = visit.visit_booking_datetime;
-                      let formattedVisitTime = "Invalid date";
+                  {hasUpcomingVisits ? (
+                    <div className="space-y-4">
+                      {dashboardData.upcomingSiteVisits.map((visit) => {
+                        const raw = visit.visit_booking_datetime;
+                        let formattedVisitTime = "Invalid date";
 
-                      if (raw && raw !== "Not specified") {
-                        const parsed = DateTime.fromISO(raw, { zone: "utc" }).setZone("Asia/Kolkata");
+                        if (raw && raw !== "Not specified") {
+                          const parsed = DateTime.fromISO(raw, { zone: "utc" }).setZone("Asia/Kolkata");
 
-                        if (parsed.isValid) {
-                          const now = DateTime.now().setZone("Asia/Kolkata");
-                          const tomorrow = now.plus({ days: 1 });
+                          if (parsed.isValid) {
+                            const now = DateTime.now().setZone("Asia/Kolkata");
+                            const tomorrow = now.plus({ days: 1 });
 
-                          const isTomorrow = parsed.hasSame(tomorrow, "day") && parsed.hasSame(tomorrow, "month");
+                            const isTomorrow = parsed.hasSame(tomorrow, "day") && parsed.hasSame(tomorrow, "month");
 
-                          formattedVisitTime = isTomorrow
-                            ? `Tomorrow, ${parsed.toFormat("hh:mm a")}`
-                            : `${parsed.toFormat("cccc")}, ${parsed.toFormat("hh:mm a")}`;
+                            formattedVisitTime = isTomorrow
+                              ? `Tomorrow, ${parsed.toFormat("hh:mm a")}`
+                              : `${parsed.toFormat("cccc")}, ${parsed.toFormat("hh:mm a")}`;
+                          }
                         }
-                      }
 
-                      // let temp = visit?.visit_booking_datetime ? new Date(visit.visit_booking_datetime).toLocaleString('en-IN', {
-                      //   timeZone: 'Asia/Kolkata',
-                      //   weekday: 'long',
-                      //   day: '2-digit',
-                      //   month: 'long',
-                      //   year: 'numeric',
-                      //   hour: '2-digit',
-                      //   minute: '2-digit',
-                      //   hour12: true,
-                      // }).replace(',', ' at')
-                      //   : 'Not scheduled'
-
-                      return (
-                        <div
-                          key={visit._id}
-                          className="flex items-center justify-between p-3 border border-border rounded-lg"
-                        >
-                          <div className="space-y-1">
-                            <div className="flex gap-1">
-                              <p className="font-medium text-foreground">{visit.first_name}</p>
-                              <p className="font-medium text-foreground">{visit.last_name}</p>
+                        return (
+                          <div
+                            key={visit._id}
+                            className="flex items-center justify-between p-3 border border-border rounded-lg"
+                          >
+                            <div className="space-y-1">
+                              <div className="flex gap-1">
+                                <p className="font-medium text-foreground">{visit.first_name}</p>
+                                <p className="font-medium text-foreground">{visit.last_name}</p>
+                              </div>
+                              <p className="text-sm text-muted-foreground">{visit.requirement}</p>
+                              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                                <Phone className="h-3 w-3" />
+                                {visit.contact_number}
+                              </p>
                             </div>
-                            <p className="text-sm text-muted-foreground">{visit.requirement}</p>
-                            <p className="text-xs text-muted-foreground flex items-center gap-1">
-                              <Phone className="h-3 w-3" />
-                              {visit.contact_number}
-                            </p>
-                          </div>
 
-                          <div className="text-right">
-                            <p className="font-medium text-foreground">{formattedVisitTime}</p>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="mt-1"
-                              onClick={() => router.push("/site-visits")}
-                            >
-                              View Details
-                            </Button>
+                            <div className="text-right">
+                              <p className="font-medium text-foreground">{formattedVisitTime}</p>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="mt-1"
+                                onClick={() => router.push("/site-visits")}
+                              >
+                                View Details
+                              </Button>
+                            </div>
                           </div>
-                        </div>
-                      );
-                    })}
-                  </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <EmptySiteVisitsState />
+                  )}
                 </CardContent>
               </Card>
             </div>
