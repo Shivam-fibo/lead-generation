@@ -510,7 +510,7 @@ export default function SiteVisitManagement() {
                       <div className="flex justify-between items-center">
                         <span className="text-gray-600 text-sm">Status:</span>
                         <div className="flex items-center gap-2">
-                          <StatusBadge status={selectedSiteVisit?.lead_type} />
+                          <StatusBadge lead={selectedSiteVisit?.lead_type} />
                         </div>
                       </div>
                       <div className="flex justify-between items-center">
