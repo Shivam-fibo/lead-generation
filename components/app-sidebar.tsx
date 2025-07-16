@@ -23,6 +23,7 @@ import {
 import { useTheme } from "next-themes"
 import { useAuth } from "@/hooks/use-auth"
 import { BsBuildingAdd } from "react-icons/bs";
+import Image from "next/image"
 
 import {
   Sidebar,
@@ -119,10 +120,10 @@ const data = {
       items: [],
     },
   ],
-    adminItems: [
-      { title: "Users", url: "/admin/users", icon: UsersRound, items: [] },
-      { title: "Add Company", url: "/admin/company", icon: BsBuildingAdd, items: [], requiresSuperAdmin: true },
-    ]
+  adminItems: [
+    { title: "Users", url: "/admin/users", icon: UsersRound, items: [] },
+    { title: "Add Company", url: "/admin/company", icon: BsBuildingAdd, items: [], requiresSuperAdmin: true },
+  ]
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
@@ -164,8 +165,16 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
               <a href="/dashboard">
-                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-                  <Goal className="size-4" />
+                <div className="flex aspect-square size-8 items-center justify-center rounded-lg text-sidebar-primary-foreground">
+                  {/* <Goal className="size-4" /> */}
+                  <Image
+                    src="/phlexi-logo.png"
+                    alt="Phlexi Logo"
+                    width={40}
+                    height={40}
+                    priority
+                    className="rounded-lg"
+                  />
                 </div>
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-semibold">PhlexiLeads</span>
@@ -176,7 +185,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
-      
+
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel>Main Menu</SidebarGroupLabel>
@@ -196,24 +205,24 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {user.role !== "CompanyEmployee" && filteredAdminItems.length > 0 && ( 
+        {user.role !== "CompanyEmployee" && filteredAdminItems.length > 0 && (
           <SidebarGroup>
-          <SidebarGroupLabel>Administration</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {filteredAdminItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild isActive={isNavItemActive(item.url)}>
-                    <a href={item.url}>
-                      <item.icon />
-                      <span>{item.title}</span>
-                    </a>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>)} 
+            <SidebarGroupLabel>Administration</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {filteredAdminItems.map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton asChild isActive={isNavItemActive(item.url)}>
+                      <a href={item.url}>
+                        <item.icon />
+                        <span>{item.title}</span>
+                      </a>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>)}
 
       </SidebarContent>
 

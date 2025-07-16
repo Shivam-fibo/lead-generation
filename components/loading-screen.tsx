@@ -2,6 +2,7 @@
 
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Crosshair, Goal } from "lucide-react"
+import Image from "next/image"
 
 export function LoadingScreen() {
   return (
@@ -10,8 +11,16 @@ export function LoadingScreen() {
         <CardContent className="pt-6">
           <div className="flex flex-col items-center space-y-4">
             <div className="relative">
-              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary text-primary-foreground animate-pulse">
-                <Goal className="h-6 w-6" />
+              <div className="flex h-12 w-12 items-center justify-center rounded-lg  text-primary-foreground animate-pulse">
+                {/* <Goal className="h-6 w-6" /> */}
+                <Image
+                  src="/phlexi-logo.png"
+                  alt="Phlexi Logo"
+                  width={40}
+                  height={40}
+                  priority
+                  className="rounded-lg"
+                />
               </div>
               <div className="absolute inset-0 rounded-lg bg-primary/20 animate-ping"></div>
             </div>

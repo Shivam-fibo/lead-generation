@@ -11,17 +11,19 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Target } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
+import Image from "next/image"
+
 
 export default function LoginForm() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const router = useRouter()
   const { login, isLoading, loginError: error, user, isAuthenticated } = useAuth()
-  
+
   // Debug current auth state
   useEffect(() => {
     console.log('Current auth state:', { user, isAuthenticated })
-   
+
   }, [user, isAuthenticated])
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -58,7 +60,7 @@ export default function LoginForm() {
     }
 
     const cred = credentials[role as keyof typeof credentials]
-    
+
     if (cred) {
       try {
         login(
@@ -78,8 +80,16 @@ export default function LoginForm() {
     <div className="mx-auto grid w-[350px] gap-6">
       <div className="grid gap-2 text-center">
         <div className="flex items-center justify-center gap-2 mb-4">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <Target className="h-4 w-4" />
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg  text-primary-foreground">
+            {/* <Target className="h-4 w-4" /> */}
+            <Image
+              src="/phlexi-logo.png"
+              alt="Phlexi Logo"
+              width={40}
+              height={40}
+              priority
+              className="rounded-lg"
+            />
           </div>
           <h1 className="text-2xl font-bold">PhlexiLeads</h1>
         </div>

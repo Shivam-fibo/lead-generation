@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Target, Eye, EyeOff } from "lucide-react"
+import Image from "next/image"
 
 const departments = ["Executive", "Administration", "Engineering", "Design", "Marketing", "Sales", "HR"]
 const roles = ["CEO", "Admin", "Team Leader", "Team Member"]
@@ -73,8 +74,16 @@ export default function SignUpForm() {
     <div className="mx-auto grid w-[400px] gap-6">
       <div className="grid gap-2 text-center">
         <div className="flex items-center justify-center gap-2 mb-4">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <Target className="h-4 w-4" />
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg text-primary-foreground">
+            {/* <Target className="h-4 w-4" /> */}
+            <Image
+              src="/phlexi-logo.png"
+              alt="Phlexi Logo"
+              width={40}
+              height={40}
+              priority
+              className="rounded-lg"
+            />
           </div>
           <h1 className="text-2xl font-bold">PhlexiLeads</h1>
         </div>
