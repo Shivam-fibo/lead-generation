@@ -1,19 +1,35 @@
 "use client"
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { dashboardApi } from "@/lib/api"
 
-export const useDashboard = () => {
+interface UseDashboardOptions {
+  projectId?: string
+  enabled?: boolean
+  enabledOnlyWithProject?: boolean
+}
+
+export const useDashboard = (options: UseDashboardOptions = {}) => {
+  const { 
+    projectId, 
+    enabled = true, 
+    enabledOnlyWithProject = false 
+  } = options
+
+  // Determine if the query should be enabled
+  const shouldEnable = enabled && (enabledOnlyWithProject ? !!projectId : true)
+
   const {
     data,
     isLoading,
     isError,
     error,
     isSuccess,
+    refetch
   } = useQuery({
-    queryKey: ["getDashboardData"],
-    queryFn: dashboardApi.getDashboardData,
+    queryKey: ["getDashboardData", projectId],
+    queryFn: () => dashboardApi.getDashboardData(projectId), // Pass projectId to API
     staleTime: 5 * 60 * 1000,
+    enabled: shouldEnable,
   })
   
   return {
@@ -22,5 +38,6 @@ export const useDashboard = () => {
     isError,
     error,
     isSuccess,
+    refetch
   }
 }

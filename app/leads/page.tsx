@@ -31,6 +31,7 @@ import { DataTable } from "@/components/data-table"
 import { useWebSocket } from "@/lib/websocket"
 import { QueryClient, useQueryClient } from "@tanstack/react-query"
 import { Avatar, AvatarFallback } from "@radix-ui/react-avatar"
+import { useDashboardStore } from "@/stores/dashboard-store"
 
 interface AddTeamMember {
   username: string;
@@ -284,6 +285,16 @@ const processConversationArray = (conversations: RawConversationMessage[]): Chat
 
 export default function LeadManagement() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuthStore()
+  const { selectedProjectId } = useDashboardStore()
+  const queryClient = useQueryClient()
+
+  // Effect to refetch leads when project changes
+  useEffect(() => {
+    if (selectedProjectId) {
+      queryClient.invalidateQueries({ queryKey: ["getAllLeads", selectedProjectId] })
+    }
+  }, [selectedProjectId, queryClient])
+
   const {
     leads,
     pagination,
@@ -313,7 +324,7 @@ export default function LeadManagement() {
   const router = useRouter()
   const [selectedLead, setSelectedLead] = useState<any | null>(null)
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
-  const queryClient = useQueryClient()
+  // const queryClient = useQueryClient()
 
   const { send: sendWebSocketMessage } = useWebSocket('new_lead', (newLead: any) => {
     console.log('New lead received via WebSocket:', newLead)
@@ -359,21 +370,15 @@ export default function LeadManagement() {
     // toast.success('New lead received!')
   }
 
-  // useEffect(() => {
-  //   if (!authLoading) {
-  //     if (!user || !isAuthenticated) {
-  //       console.log('No authenticated user, redirecting to login')
-  //       router.push("/")
-  //       return
-  //     }
-
-  //     if (user.roles[0].name !== "Admin") {
-  //       console.log('User is not admin, redirecting to dashboard')
-  //       router.push("/dashboard")
-  //       return
-  //     }
-  //   }
-  // }, [authLoading, router, user, isAuthenticated])
+  useEffect(() => {
+    if (!authLoading) {
+      if (!user || !isAuthenticated) {
+        console.log('No authenticated user, redirecting to login')
+        router.push("/")
+        return
+      }
+    }
+  }, [authLoading, router, user, isAuthenticated])
 
   const handleAddLead = (leadData: any) => {
     console.log('leadData', leadData)
@@ -433,107 +438,107 @@ export default function LeadManagement() {
 
   console.log('selectedLead.created_at', selectedLead?.created_at)
 
-// Utility: CSV export function with UTF-8 BOM for Excel Unicode support
-const exportToCSV = (data, filename = 'leads_export.csv') => {
-  const headers = [
-    'First Name',
-    'Last Name',
-    'Contact Number',
-    'Email',
-    'Lead Type',
-    'Requirement',
-    'Project Name',
-    'Call Status',
-    'Visit Booking Date',
-    'Call Summary',
-    'Hot Lead',
-    'Call Priority',
-    'Reached',
-    'Created At',
-    'Updated At'
-  ];
+  // Utility: CSV export function with UTF-8 BOM for Excel Unicode support
+  const exportToCSV = (data, filename = 'leads_export.csv') => {
+    const headers = [
+      'First Name',
+      'Last Name',
+      'Contact Number',
+      'Email',
+      'Lead Type',
+      'Requirement',
+      'Project Name',
+      'Call Status',
+      'Visit Booking Date',
+      'Call Summary',
+      'Hot Lead',
+      'Call Priority',
+      'Reached',
+      'Created At',
+      'Updated At'
+    ];
 
-  const csvData = data.map(lead => [
-    lead.first_name || '',
-    lead.last_name || '',
-    lead.contact_number || '',
-    lead.email || '',
-    lead.lead_type || '',
-    lead.requirement || '',
-    lead.project_name || lead.projectName || '',
-    lead.call_connection_status || '',
-    lead.visit_booking_datetime ? new Date(lead.visit_booking_datetime).toLocaleString('en-IN', {
-      timeZone: 'Asia/Kolkata',
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: true,
-    }) : '',
-    lead.call_summary || '',
-    lead.is_hot_lead ? 'Yes' : 'No',
-    lead.call_priority || '',
-    lead.reached ? 'Yes' : 'No',
-    lead.created_at || lead.createdAt ? new Date(lead.created_at || lead.createdAt).toLocaleString('en-IN', {
-      timeZone: 'Asia/Kolkata',
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: true,
-    }) : '',
-    lead.updated_at || lead.updatedAt ? new Date(lead.updated_at || lead.updatedAt).toLocaleString('en-IN', {
-      timeZone: 'Asia/Kolkata',
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: true,
-    }) : ''
-  ]);
+    const csvData = data.map(lead => [
+      lead.first_name || '',
+      lead.last_name || '',
+      lead.contact_number || '',
+      lead.email || '',
+      lead.lead_type || '',
+      lead.requirement || '',
+      lead.project_name || lead.projectName || '',
+      lead.call_connection_status || '',
+      lead.visit_booking_datetime ? new Date(lead.visit_booking_datetime).toLocaleString('en-IN', {
+        timeZone: 'Asia/Kolkata',
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true,
+      }) : '',
+      lead.call_summary || '',
+      lead.is_hot_lead ? 'Yes' : 'No',
+      lead.call_priority || '',
+      lead.reached ? 'Yes' : 'No',
+      lead.created_at || lead.createdAt ? new Date(lead.created_at || lead.createdAt).toLocaleString('en-IN', {
+        timeZone: 'Asia/Kolkata',
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true,
+      }) : '',
+      lead.updated_at || lead.updatedAt ? new Date(lead.updated_at || lead.updatedAt).toLocaleString('en-IN', {
+        timeZone: 'Asia/Kolkata',
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true,
+      }) : ''
+    ]);
 
-  const csvContent = [headers, ...csvData];
+    const csvContent = [headers, ...csvData];
 
-  const csvString = csvContent.map(row =>
-    row.map(field => {
-      if (typeof field === 'string' && (field.includes(',') || field.includes('"') || field.includes('\n'))) {
-        return `"${field.replace(/"/g, '""')}"`;
-      }
-      return field;
-    }).join(',')
-  ).join('\n');
+    const csvString = csvContent.map(row =>
+      row.map(field => {
+        if (typeof field === 'string' && (field.includes(',') || field.includes('"') || field.includes('\n'))) {
+          return `"${field.replace(/"/g, '""')}"`;
+        }
+        return field;
+      }).join(',')
+    ).join('\n');
 
-  // Add UTF-8 BOM for Excel compatibility
-  const BOM = '\uFEFF';
-  const blob = new Blob([BOM + csvString], { type: 'text/csv;charset=utf-8;' });
+    // Add UTF-8 BOM for Excel compatibility
+    const BOM = '\uFEFF';
+    const blob = new Blob([BOM + csvString], { type: 'text/csv;charset=utf-8;' });
 
-  const link = document.createElement('a');
-  if (link.download !== undefined) {
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', filename);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  }
-};
+    const link = document.createElement('a');
+    if (link.download !== undefined) {
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', filename);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  };
 
-// Call this from your component with leads array
-const handleExportCSV = () => {
-  if (!leads || leads.length === 0) {
-    alert('No leads data to export');
-    return;
-  }
+  // Call this from your component with leads array
+  const handleExportCSV = () => {
+    if (!leads || leads.length === 0) {
+      alert('No leads data to export');
+      return;
+    }
 
-  const timestamp = new Date().toISOString().split('T')[0];
-  const filename = `leads_export_${timestamp}.csv`;
+    const timestamp = new Date().toISOString().split('T')[0];
+    const filename = `leads_export_${timestamp}.csv`;
 
-  exportToCSV(leads, filename);
-};
+    exportToCSV(leads, filename);
+  };
 
   return (
     <DashboardLayout>

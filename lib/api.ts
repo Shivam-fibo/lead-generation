@@ -1,8 +1,8 @@
 // API Configuration
 // const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_LOCAL_URL
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
+// const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
 
-// const API_BASE_URL = "http://localhost:5000/api"
+const API_BASE_URL = "http://localhost:5000/api"
 
 // Define custom URLs for specific endpoints
 const CUSTOM_ENDPOINTS = {
@@ -140,9 +140,9 @@ export const authApi = {
 }
 
 export const leadsApi = {
-  getAllLeads: async (): Promise<any> => {
+  getAllLeads: async (projectId?: string): Promise<any> => {
     try {
-      const response = await fetchApi<{ response: any }>('/leads');
+      const response = await fetchApi<{ response: any }>(`/leads?projectId=${projectId}`);
       return response || null;
     } catch (error) {
       throw error;
@@ -350,9 +350,9 @@ export const teamApi = {
 }
 
 export const dashboardApi = {
-  getDashboardData: async (): Promise<any> => {
+  getDashboardData: async (projectId?: string): Promise<any> => {
     try {
-      const response = await fetchApi<{ data: any }>(`/dashboard-data`);
+      const response = await fetchApi<{ data: any }>(`/dashboard-data?projectId=${projectId}`);
       if (!response) return null;
       return response
     } catch (error) {
@@ -362,15 +362,14 @@ export const dashboardApi = {
 }
 
 export const siteVisitsApi = {
-  getSiteVisits: async (): Promise<any> => {
+  getSiteVisits: async (projectId?: string): Promise<any> => {
     try {
-      const response = await fetchApi<{ data: any }>(`/site-visits`);
-      if (!response) return null;
-      return response
+      const response = await fetchApi<{ response: any }>(`/site-visits?projectId=${projectId}`);
+      return response;
     } catch (error) {
       throw error;
     }
-  },
+  }
 }
 
 export const projectsApi = {

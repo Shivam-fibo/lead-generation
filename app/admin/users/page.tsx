@@ -55,23 +55,21 @@ export default function LeadManagement() {
   const [editingMember, setEditingMember] = useState<TeamMember | null>(null)
   const router = useRouter()
 
-  console.log('editingMember:', editingMember)
+  useEffect(() => {
+    if (!authLoading) {
+      if (!user || !isAuthenticated) {
+        console.log('No authenticated user, redirecting to login')
+        router.push("/")
+        return
+      }
 
-  //   useEffect(() => {
-  //     if (!authLoading) {
-  //       if (!user || !isAuthenticated) {
-  //         console.log('No authenticated user, redirecting to login')
-  //         router.push("/")
-  //         return
-  //       }
-
-  //       if (user.role !== "Admin") {
-  //         console.log('User is not admin, redirecting to dashboard')
-  //         router.push("/dashboard")
-  //         return
-  //       }
-  //     }
-  //   }, [authLoading, router, user, isAuthenticated])
+      if (user.role === "CompanyEmployee") {
+        console.log('User is not admin, redirecting to dashboard')
+        router.push("/dashboard")
+        return
+      }
+    }
+  }, [authLoading, router, user, isAuthenticated])
 
   const handleAddMember = (memberData: any) => {
     let payload = {
@@ -121,7 +119,7 @@ export default function LeadManagement() {
             const firstName = values[2]
             const lastName = values[3]
             const phoneNo = values[4]
-            const roles = [values[5]] 
+            const roles = [values[5]]
             const password = values[6] || 'default123'
             const projects = values[7]?.split(',').map(p => p.trim()) || []
 
