@@ -44,6 +44,7 @@ export function useTeam() {
       toast.success(`User '${newMember[0].firstName || ""}' created successfully!`)
       // addMember(newMember)
       queryClient.invalidateQueries({ queryKey: ["teamMembers"] })
+      queryClient.invalidateQueries({ queryKey: ["teamMemberList"] })
     },
     onError: (error: any) => {
       toast.error('Error creating user', {
@@ -59,6 +60,8 @@ export function useTeam() {
       toast.success(`User '${updatedMember[0].firstName || ""}' updated successfully!`)
       // updateMember(updatedMember._id, updatedMember)
       queryClient.invalidateQueries({ queryKey: ["teamMembers"] })
+      queryClient.invalidateQueries({ queryKey: ["teamMemberList"] })
+
     },
     onError: (error: any) => {
       toast.error('Error creating user', {
@@ -73,6 +76,8 @@ export function useTeam() {
       toast.success(`User deleted successfully!`)
       // removeMember(id)
       queryClient.invalidateQueries({ queryKey: ["teamMembers"] })
+      queryClient.invalidateQueries({ queryKey: ["teamMemberList"] })
+
     },
     onError: (error: any) => {
       toast.error('Error deleting user', {

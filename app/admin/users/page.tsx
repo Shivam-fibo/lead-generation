@@ -19,7 +19,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Plus, Upload } from "lucide-react"
 import { useAuthStore } from "@/stores/auth-store"
 import { useTeamStore } from "@/stores/team-store"
-import { useTeam } from "@/hooks/use-team"
+import { useTeam, useTeamMemberList } from "@/hooks/use-team"
 
 
 interface AddTeamMember {
@@ -35,8 +35,8 @@ interface AddTeamMember {
 export default function LeadManagement() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuthStore()
   const {
-    members: apiMembers,
-    isLoading: teamLoading,
+    // members: apiMembers,
+    // isLoading: teamLoading,
     addMember: addTeamMember,
     addMembersCsv,
     updateMember: updateTeamMember,
@@ -45,6 +45,11 @@ export default function LeadManagement() {
     isAddingMembersCsv,
     isUpdatingMember
   } = useTeam()
+
+  const {
+    members: apiMembers,
+    isLoading: teamLoading,
+  } = useTeamMemberList()
 
   const members = apiMembers
 
@@ -80,7 +85,7 @@ export default function LeadManagement() {
       email: memberData.email,
       password: memberData.password,
       role: memberData.roles[0].name,
-      projects: [memberData.projects[0]._id],
+      projects: memberData.projects,
       companyId: user?.companyId,
     }
     addTeamMember(payload);
@@ -212,6 +217,7 @@ export default function LeadManagement() {
                 data={members}
                 columns={createTeamMemberColumns({
                   onEdit: (member) => {
+                    console.log('Editing member:', member)
                     setEditingMember(member)
                     setShowEditDialog(true)
                   },
