@@ -41,6 +41,13 @@ async function fetchApi<T>(endpoint: string, options: RequestInit = {}): Promise
     headers,
   })
 
+  // Redirect to login if unauthorized
+  if (response.status === 401) {
+    localStorage.removeItem('authToken')
+    localStorage.removeItem('currentUser')
+    window.location.href = "/"
+  }
+
   if (!response.ok) {
     const error = await response.json().catch(() => ({}))
     throw new Error(error.message || 'An error occurred')

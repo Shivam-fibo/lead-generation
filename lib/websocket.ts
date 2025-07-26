@@ -1,20 +1,18 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
 
 let token;
+let selectedProjectId;
 if (typeof window !== 'undefined') {
   token = localStorage.getItem("authToken")
+  selectedProjectId = localStorage.getItem("selectedProjectId")
 }
 
 // Convert HTTP URL to WebSocket URL  
 // const WS_BASE_URL = `wss://satyasankalpdevelopers-ai-voice-agent-1.onrender.com/ws?token=${token}`;
 
-// const WS_BASE_URL = `ws://localhost:5000/ws?token=${token}`; // local
+// const WS_BASE_URL = `ws://localhost:5000/ws?token=${token}&project_id=${selectedProjectId}`; // local
 
-// const WS_BASE_URL = `wss://cd42-2409-4080-9db4-4b8a-889b-f78b-62a-2b0c.ngrok-free.app/test-websocket`; 
-
-// const WS_BASE_URL = `wss://b961-2409-4080-901d-15c8-edc1-7086-5a20-7dff.ngrok-free.app/ws?token=${token}`; 
-
-const WS_BASE_URL = `${process.env.NEXT_PUBLIC_API_WS_BASE_URL}ws?token=${token}`;
+const WS_BASE_URL = `${process.env.NEXT_PUBLIC_API_WS_BASE_URL}ws?token=${token}&project_id=${selectedProjectId}`;
 
 class WebSocketService {
   private ws: WebSocket | null = null;
