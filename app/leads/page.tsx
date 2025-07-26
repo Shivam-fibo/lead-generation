@@ -340,82 +340,136 @@ export default function LeadManagement() {
   })
 
 
-  const handleLeadAudioUpdate = (audioUpdate: any) => {
-    console.log('Handling lead audio update:', audioUpdate);
+const handleLeadAudioUpdate = (audioUpdate: any) => {
+  console.log('Handling lead audio update:', audioUpdate);
 
-    const { lead_id, audio_data, timestamp } = audioUpdate;
+  // Extract audio data - handle both direct data and nested payload
+  const updateData = audioUpdate.data || audioUpdate.payload || audioUpdate;
+  const { lead_id, audio_data, timestamp } = updateData;
 
-    if (!lead_id || !audio_data) {
-      console.warn('Invalid audio update data:', audioUpdate);
-      return;
-    }
-
-    // Update the leads list in cache
-    queryClient.setQueryData(['getAllLeads'], (oldData: any) => {
-      if (!oldData?.data) return oldData;
-
-      const updatedData = {
-        ...oldData,
-        data: oldData.data.map((lead: any) => {
-          if (lead._id === lead_id || lead.id === lead_id) {
-            return {
-              ...lead,
-              call_recording: {
-                ...lead.call_recording,
-                audio_r2_url: audio_data.audio_r2_url,
-                elevenlabs_conversation_id: audio_data.elevenlabs_conversation_id || lead.call_recording?.elevenlabs_conversation_id
-              },
-              audio_data: audio_data
-            }
-          }
-          return lead;
-        })
-      };
-
-      console.log('Updated leads with audio data:', updatedData);
-      return updatedData;
-    });
-
-    // If the drawer is open and showing the updated lead, refresh the selected lead
-    if (selectedLead && (selectedLead._id === lead_id || selectedLead.id === lead_id)) {
-      setSelectedLead(prevLead => ({
-        ...prevLead,
-        call_recording: {
-          ...prevLead.call_recording,
-          audio_r2_url: audio_data.audio_r2_url,
-          elevenlabs_conversation_id: audio_data.elevenlabs_conversation_id || prevLead.call_recording?.elevenlabs_conversation_id,
-        },
-        audio_data: audio_data
-      }));
-    }
+  if (!lead_id || !audio_data) {
+    console.warn('Invalid audio update data:', audioUpdate);
+    return;
   }
+
+  console.log('Processing audio update for lead:', lead_id);
+
+  // Update the leads list in cache
+  queryClient.setQueryData(['getAllLeads'], (oldData: any) => {
+    if (!oldData?.data) {
+      console.warn('No existing lead data to update with audio');
+      return oldData;
+    }
+
+    const updatedData = {
+      ...oldData,
+      data: oldData.data.map((lead: any) => {
+        if (lead._id === lead_id || lead.id === lead_id) {
+          console.log('Updating lead with audio data:', lead_id);
+          return {
+            ...lead,
+            call_recording: {
+              ...lead.call_recording,
+              audio_r2_url: audio_data.audio_r2_url,
+              elevenlabs_conversation_id: audio_data.elevenlabs_conversation_id || lead.call_recording?.elevenlabs_conversation_id
+            },
+            audio_data: audio_data
+          };
+        }
+        return lead;
+      })
+    };
+
+    console.log('Updated leads with audio data for lead:', lead_id);
+    return updatedData;
+  });
+
+  // Update selected lead if it's the one being updated
+  if (selectedLead && (selectedLead._id === lead_id || selectedLead.id === lead_id)) {
+    console.log('Updating selected lead with audio data');
+    setSelectedLead(prevLead => ({
+      ...prevLead,
+      call_recording: {
+        ...prevLead.call_recording,
+        audio_r2_url: audio_data.audio_r2_url,
+        elevenlabs_conversation_id: audio_data.elevenlabs_conversation_id || prevLead.call_recording?.elevenlabs_conversation_id,
+      },
+      audio_data: audio_data
+    }));
+  }
+};
 
   const handleNewLeadReceived = (newLead: any) => {
     console.log('Handling new lead:', newLead);
 
+    // Skip welcome messages
     if (newLead?.type === "welcome") {
       console.log('Ignoring welcome message', newLead);
       return;
     }
 
+    // Extract the actual lead data - handle both direct data and nested payload
+    const leadData = newLead.data || newLead.payload || newLead;
+
+    if (!leadData || typeof leadData !== 'object') {
+      console.warn('Invalid lead data received:', newLead);
+      return;
+    }
+
+    console.log('Processing lead data:', leadData);
+
     queryClient.setQueryData(['getAllLeads'], (oldData: any) => {
       if (!oldData) {
+        console.log('Creating new data structure with first lead');
         return {
-          data: [newLead],
+          data: [leadData],
           pagination: null
-        }
+        };
       }
 
-      // Create new data structure with the new lead added to the beginning
+      // Check if lead already exists to prevent duplicates
+      const existingLead = oldData.data?.find((lead: any) =>
+        lead._id === leadData._id ||
+        lead.id === leadData.id ||
+        (lead.contact_number === leadData.contact_number &&
+          lead.first_name === leadData.first_name)
+      );
+
+      if (existingLead) {
+        console.log('Lead already exists, merging data:', leadData._id || leadData.id);
+        // Update existing lead instead of adding duplicate
+        const updatedData = {
+          ...oldData,
+          data: oldData.data.map((lead: any) => {
+            if (lead._id === leadData._id ||
+              lead.id === leadData.id ||
+              (lead.contact_number === leadData.contact_number &&
+                lead.first_name === leadData.first_name)) {
+              return { ...lead, ...leadData };
+            }
+            return lead;
+          })
+        };
+        console.log('Updated existing lead in data structure');
+        return updatedData;
+      }
+
+      // Add new lead to the beginning
       const updatedData = {
         ...oldData,
-        data: [newLead, ...(oldData.data || [])]
-      }
+        data: [leadData, ...(oldData.data || [])]
+      };
 
-      console.log('Updated data structure:', updatedData);
-      return updatedData
-    })
-  }
+      console.log('Added new lead to data structure:', leadData._id || leadData.id);
+      return updatedData;
+    });
+
+    // Force a re-render to ensure UI updates
+    queryClient.invalidateQueries({
+      queryKey: ["getAllLeads", selectedProjectId],
+      exact: false
+    });
+  };
 
   useEffect(() => {
     if (!authLoading) {
