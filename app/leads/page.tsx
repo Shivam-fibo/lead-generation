@@ -906,7 +906,7 @@ const handleLeadAudioUpdate = (audioUpdate: any) => {
                     </CardContent>
                   </Card>
 
-                  <Card>
+                  {/* <Card>
                     <CardHeader className="pb-3">
                       <CardTitle className="text-md font-semibold">CALL RECORDING</CardTitle>
                     </CardHeader>
@@ -941,7 +941,7 @@ const handleLeadAudioUpdate = (audioUpdate: any) => {
                         );
                       })()}
                     </CardContent>
-                  </Card>
+                  </Card> */}
 
                   {/* Conversation History Section */}
                   <Card>
