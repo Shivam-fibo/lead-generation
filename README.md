@@ -44,6 +44,8 @@ A modern lead management system built with Next.js, Tailwind-CSS, ShadCn-UI. Pow
 ```
 lead-platform/
 ├── app/                    # Next.js app directory containing all routes and pages
+│   ├── layout.tsx         # Root layout with providers and global configuration
+│   ├── page.tsx          # Root page (login/auth handling)
 │   ├── admin/             # Admin section for company and user management
 │   ├── dashboard/         # Main dashboard views
 │   ├── leads/            # Lead management module with real-time updates
@@ -64,6 +66,8 @@ lead-platform/
 
 - `lib/api.ts`: All the API call functions are defined here
 - `lib/websocket.ts`: WebSocket connection handler for real-time updates
+- `app/layout.tsx`: Root layout that sets up providers (Query, Theme, Loading), global styles, and navigation
+- `app/page.tsx`: Root page component handling authentication state and login flow
 - `hooks/use-leads.ts`: Lead management custom hook
 - `stores/auth-store.ts`: Authentication state management
 - `app/leads/page.tsx`: Main lead management interface with real-time WebSocket integration
