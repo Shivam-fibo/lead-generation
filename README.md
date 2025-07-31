@@ -79,6 +79,8 @@ lead-platform/
 - TypeScript
 - TailwindCSS
 - Shadcn UI
+- Zustand
+- Tanstack Query
 
 ## Complex Flows and Code Structure
 
