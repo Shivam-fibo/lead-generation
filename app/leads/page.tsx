@@ -2,7 +2,7 @@
 
 import React from "react"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import DashboardLayout from "@/components/dashboard-layout"
 import { LeadSkeleton } from "@/components/loading-screen"
@@ -26,6 +26,13 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet"
+
+import { DateRange } from "react-day-picker";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { CalendarIcon } from "lucide-react";
+import { format } from "date-fns";
+
 
 import { DataTable } from "@/components/data-table"
 import { useWebSocket } from "@/lib/websocket"
@@ -328,6 +335,11 @@ export default function LeadManagement() {
   // const queryClient = useQueryClient()
 
 
+  const [leadTypeFilter, setLeadTypeFilter] = useState<'all' | 'Hot' | 'Cold'>('all')
+  const [reachedFilter, setReachedFilter] = useState<'all' | 'reached' | 'not-reached'>('all');
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
+
+
   const { send: sendWebSocketMessage } = useWebSocket('new_lead', (newLead: any) => {
     console.log('New lead received via WebSocket:', newLead)
     handleNewLeadReceived(newLead)
@@ -340,64 +352,64 @@ export default function LeadManagement() {
   })
 
 
-const handleLeadAudioUpdate = (audioUpdate: any) => {
-  console.log('Handling lead audio update:', audioUpdate);
+  const handleLeadAudioUpdate = (audioUpdate: any) => {
+    console.log('Handling lead audio update:', audioUpdate);
 
-  // Extract audio data - handle both direct data and nested payload
-  const updateData = audioUpdate.data || audioUpdate.payload || audioUpdate;
-  const { lead_id, audio_data, timestamp } = updateData;
+    // Extract audio data - handle both direct data and nested payload
+    const updateData = audioUpdate.data || audioUpdate.payload || audioUpdate;
+    const { lead_id, audio_data, timestamp } = updateData;
 
-  if (!lead_id || !audio_data) {
-    console.warn('Invalid audio update data:', audioUpdate);
-    return;
-  }
-
-  console.log('Processing audio update for lead:', lead_id);
-
-  // Update the leads list in cache
-  queryClient.setQueryData(['getAllLeads'], (oldData: any) => {
-    if (!oldData?.data) {
-      console.warn('No existing lead data to update with audio');
-      return oldData;
+    if (!lead_id || !audio_data) {
+      console.warn('Invalid audio update data:', audioUpdate);
+      return;
     }
 
-    const updatedData = {
-      ...oldData,
-      data: oldData.data.map((lead: any) => {
-        if (lead._id === lead_id || lead.id === lead_id) {
-          console.log('Updating lead with audio data:', lead_id);
-          return {
-            ...lead,
-            call_recording: {
-              ...lead.call_recording,
-              audio_r2_url: audio_data.audio_r2_url,
-              elevenlabs_conversation_id: audio_data.elevenlabs_conversation_id || lead.call_recording?.elevenlabs_conversation_id
-            },
-            audio_data: audio_data
-          };
-        }
-        return lead;
-      })
-    };
+    console.log('Processing audio update for lead:', lead_id);
 
-    console.log('Updated leads with audio data for lead:', lead_id);
-    return updatedData;
-  });
+    // Update the leads list in cache
+    queryClient.setQueryData(['getAllLeads'], (oldData: any) => {
+      if (!oldData?.data) {
+        console.warn('No existing lead data to update with audio');
+        return oldData;
+      }
 
-  // Update selected lead if it's the one being updated
-  if (selectedLead && (selectedLead._id === lead_id || selectedLead.id === lead_id)) {
-    console.log('Updating selected lead with audio data');
-    setSelectedLead(prevLead => ({
-      ...prevLead,
-      call_recording: {
-        ...prevLead.call_recording,
-        audio_r2_url: audio_data.audio_r2_url,
-        elevenlabs_conversation_id: audio_data.elevenlabs_conversation_id || prevLead.call_recording?.elevenlabs_conversation_id,
-      },
-      audio_data: audio_data
-    }));
-  }
-};
+      const updatedData = {
+        ...oldData,
+        data: oldData.data.map((lead: any) => {
+          if (lead._id === lead_id || lead.id === lead_id) {
+            console.log('Updating lead with audio data:', lead_id);
+            return {
+              ...lead,
+              call_recording: {
+                ...lead.call_recording,
+                audio_r2_url: audio_data.audio_r2_url,
+                elevenlabs_conversation_id: audio_data.elevenlabs_conversation_id || lead.call_recording?.elevenlabs_conversation_id
+              },
+              audio_data: audio_data
+            };
+          }
+          return lead;
+        })
+      };
+
+      console.log('Updated leads with audio data for lead:', lead_id);
+      return updatedData;
+    });
+
+    // Update selected lead if it's the one being updated
+    if (selectedLead && (selectedLead._id === lead_id || selectedLead.id === lead_id)) {
+      console.log('Updating selected lead with audio data');
+      setSelectedLead(prevLead => ({
+        ...prevLead,
+        call_recording: {
+          ...prevLead.call_recording,
+          audio_r2_url: audio_data.audio_r2_url,
+          elevenlabs_conversation_id: audio_data.elevenlabs_conversation_id || prevLead.call_recording?.elevenlabs_conversation_id,
+        },
+        audio_data: audio_data
+      }));
+    }
+  };
 
   const handleNewLeadReceived = (newLead: any) => {
     console.log('Handling new lead:', newLead);
@@ -672,6 +684,147 @@ const handleLeadAudioUpdate = (audioUpdate: any) => {
     return { conversationId: null, createdAt: null };
   }
 
+
+  interface MultiSelectFilterProps {
+    leadTypeFilter: 'all' | 'Hot' | 'Cold';
+    reachedFilter: 'all' | 'reached' | 'not-reached';
+    setLeadTypeFilter: (value: 'all' | 'Hot' | 'Cold') => void;
+    setReachedFilter: (value: 'all' | 'reached' | 'not-reached') => void;
+  }
+
+  const MultiSelectFilter: React.FC<MultiSelectFilterProps> = ({
+    leadTypeFilter,
+    reachedFilter,
+    setLeadTypeFilter,
+    setReachedFilter,
+  }) => {
+    const [open, setOpen] = useState(false);
+    const [selectedTypes, setSelectedTypes] = useState<('Hot' | 'Cold')[]>([]);
+    const [selectedStatuses, setSelectedStatuses] = useState<('reached' | 'not-reached')[]>([]);
+
+    useEffect(() => {
+      if (leadTypeFilter === 'Hot') setSelectedTypes(['Hot']);
+      else if (leadTypeFilter === 'Cold') setSelectedTypes(['Cold']);
+      else setSelectedTypes([]);
+
+      if (reachedFilter === 'reached') setSelectedStatuses(['reached']);
+      else if (reachedFilter === 'not-reached') setSelectedStatuses(['not-reached']);
+      else setSelectedStatuses([]);
+    }, [leadTypeFilter, reachedFilter]);
+
+    const handleTypeChange = (type: 'Hot' | 'Cold') => {
+      if (leadTypeFilter === type) {
+        setLeadTypeFilter('all');
+      } else {
+        setLeadTypeFilter(type);
+      }
+    };
+
+    const handleStatusChange = (status: 'reached' | 'not-reached') => {
+      if (reachedFilter === status) {
+        setReachedFilter('all');
+      } else {
+        setReachedFilter(status);
+      }
+    };
+
+
+    const displayValue = React.useMemo(() => {
+      const parts = [];
+      if (selectedTypes.length > 0) parts.push(...selectedTypes);
+      if (selectedStatuses.length > 0) parts.push(
+        ...selectedStatuses.map(s => s === 'reached' ? 'Reached' : 'Not Reached')
+      );
+      return parts.length > 0 ? parts.join(', ') : 'All Types & Statuses';
+    }, [selectedTypes, selectedStatuses]);
+
+    return (
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button variant="outline" className="w-[200px] justify-start">
+            {displayValue}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-[250px] p-2">
+          <div className="space-y-4">
+            <div>
+              <h4 className="text-sm font-medium mb-2 px-2">Lead Type</h4>
+              <div className="space-y-1">
+                <div
+                  className={`flex items-center p-2 rounded-md cursor-pointer ${selectedTypes.includes('Hot') ? 'bg-accent' : 'hover:bg-muted'
+                    }`}
+                  onClick={() => handleTypeChange('Hot')}
+                >
+                  <Flame className="h-4 w-4 mr-2 text-red-500" />
+                  <span>Hot Leads</span>
+                </div>
+                <div
+                  className={`flex items-center p-2 rounded-md cursor-pointer ${selectedTypes.includes('Cold') ? 'bg-accent' : 'hover:bg-muted'
+                    }`}
+                  onClick={() => handleTypeChange('Cold')}
+                >
+                  <LucideSnowflake className="h-4 w-4 mr-2 text-blue-500" />
+                  <span>Cold Leads</span>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <h4 className="text-sm font-medium mb-2 px-2">Reached Status</h4>
+              <div className="space-y-1">
+                <div
+                  className={`flex items-center p-2 rounded-md cursor-pointer ${selectedStatuses.includes('reached') ? 'bg-accent' : 'hover:bg-muted'
+                    }`}
+                  onClick={() => handleStatusChange('reached')}
+                >
+                  <Locate className="h-4 w-4 mr-2 text-green-500" />
+                  <span>Reached</span>
+                </div>
+                <div
+                  className={`flex items-center p-2 rounded-md cursor-pointer ${selectedStatuses.includes('not-reached') ? 'bg-accent' : 'hover:bg-muted'
+                    }`}
+                  onClick={() => handleStatusChange('not-reached')}
+                >
+                  <LocateOff className="h-4 w-4 mr-2 text-gray-500" />
+                  <span>Not Reached</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </PopoverContent>
+      </Popover>
+    );
+  };
+
+
+const filteredLeads = useMemo(() => {
+  if (!leads) return [];
+
+  return leads.filter(lead => {
+    const typeMatch = 
+      leadTypeFilter === 'all' || 
+      lead.lead_type === leadTypeFilter;
+
+    const reachedMatch = 
+      reachedFilter === 'all' ||
+      (reachedFilter === 'reached' && lead.reached) ||
+      (reachedFilter === 'not-reached' && !lead.reached);
+
+    let dateMatch = true;
+    if (dateRange?.from && dateRange?.to) {
+      const leadDate = new Date(lead.created_at);
+      const fromDate = new Date(dateRange.from);
+      const toDate = new Date(dateRange.to);
+        toDate.setHours(23, 59, 59, 999);
+
+      dateMatch = leadDate >= fromDate && leadDate <= toDate;
+      console.log("dateMatch",dateMatch)
+    }
+
+    return typeMatch && reachedMatch && dateMatch;
+  });
+}, [leads, leadTypeFilter, reachedFilter, dateRange]);
+
   return (
     <DashboardLayout>
       {isLeadLoading ? (
@@ -686,6 +839,53 @@ const handleLeadAudioUpdate = (audioUpdate: any) => {
               </div>
               <div className="flex space-x-2">
                 {/* <Button variant="outline" onClick={() => document.getElementById("csv-upload")?.click()}> */}
+
+                <MultiSelectFilter
+                  leadTypeFilter={leadTypeFilter}
+                  reachedFilter={reachedFilter}
+                  setLeadTypeFilter={setLeadTypeFilter}
+                  setReachedFilter={setReachedFilter}
+                />
+
+                <div>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        id="date"
+                        variant="outline"
+                      className="w-[200px] max-w-[200px] justify-start text-left font-normal truncate"
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {dateRange?.from ? (
+                          dateRange.to ? (
+                            <>
+                              {format(dateRange.from, "MMM dd, yyyy")} -{" "}
+                              {format(dateRange.to, "MMM dd, yyyy")}
+                            </>
+                          ) : (
+                            format(dateRange.from, "MMM dd, yyyy")
+                          )
+                        ) : (
+                          <span>Pick a date range</span>
+                        )}
+
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-1" align="center">
+                      <Calendar
+                        initialFocus
+                        mode="range"
+                        defaultMonth={dateRange?.from}
+                        selected={dateRange}
+                        onSelect={setDateRange}
+                        numberOfMonths={1}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+
+
+
                 <Button variant="outline" onClick={handleExportCSV}>
                   <Upload className="mr-2 h-4 w-4" />
                   Export CSV
@@ -703,7 +903,8 @@ const handleLeadAudioUpdate = (audioUpdate: any) => {
             <Tabs defaultValue="list" className="space-y-4">
               <TabsContent value="list" className="space-y-4">
                 <DataTable
-                  data={leads}
+                  // data={leads}
+                  data={filteredLeads}
                   columns={columns}
                   handleCellClickCb={handleViewLead}
                   // For on View
