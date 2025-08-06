@@ -1,7 +1,7 @@
 "use client"
 
 import React from "react"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import DashboardLayout from "@/components/dashboard-layout"
 import { LeadSkeleton, LoadingScreen, TeamSkeleton } from "@/components/loading-screen"
@@ -23,7 +23,7 @@ import {
   Locate,
   LocateOff,
   Eye,
-  Calendar,
+
   Phone,
   X,
   Flame,
@@ -51,6 +51,14 @@ import {
 
 import { mockSiteVisits } from "@/components/site-visit-list"
 import { useSiteVisits } from "@/hooks/use-site-visits"
+
+import { DateRange } from "react-day-picker";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { CalendarIcon } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import DateRangePicker from "@/components/dateRangePicker"
+
+import { format } from "date-fns";
 
 interface AddTeamMember {
   username: string;
@@ -268,6 +276,32 @@ export default function SiteVisitManagement() {
   const [editingLead, setEditingLead] = useState<TeamMember | null>(null)
   const [selectedSiteVisit, setSelectedSiteVisit] = useState<any | null>(null)
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
+
+
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
+
+  const filteredSiteVisits = useMemo(() => {
+    if (!siteVisitsData) return [];
+
+    return siteVisitsData.filter(visit => {
+
+    let dateMatch = true;
+    if (dateRange?.from && dateRange?.to) {
+      const leadDate = new Date(visit.created_at);
+      const fromDate = new Date(dateRange.from);
+      const toDate = new Date(dateRange.to);
+        toDate.setHours(23, 59, 59, 999);
+
+      dateMatch = leadDate >= fromDate && leadDate <= toDate;
+      console.log("dateMatch",dateMatch)
+    }
+    return dateMatch
+  });
+
+  }, [siteVisitsData, dateRange]); 
+
+
+
   const router = useRouter()
 
   useEffect(() => {
@@ -350,6 +384,9 @@ export default function SiteVisitManagement() {
                 <p className="text-gray-600 dark:text-gray-400">Manage all scheduled site visits and meetings</p>
               </div>
               <div className="flex space-x-2">
+                <div>
+                  <DateRangePicker dateRange={dateRange} setDateRange={setDateRange} />
+                </div>
                 {/* <Button variant="outline" onClick={() => document.getElementById("csv-upload")?.click()}>
                   <Upload className="mr-2 h-4 w-4" />
                   Export CSV
@@ -374,7 +411,7 @@ export default function SiteVisitManagement() {
             <Tabs defaultValue="list" className="space-y-4">
               <TabsContent value="list" className="space-y-4">
                 <DataTable
-                  data={siteVisitsData} // Replace with your actual site visits data
+                  data={filteredSiteVisits} // Replace with your actual site visits data
                   columns={columns}
                   handleCellClickCb={handleViewSiteVisit}
                   clickableColumns={[
