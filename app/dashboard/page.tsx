@@ -157,13 +157,13 @@ export default function Dashboard() {
       </PageWrapper>
     )
   }
-  
+
   // Show loading state until a project is selected
   if (!selectedProjectId) {
     return (
       <PageWrapper>
         <DashboardLayout>
-         <DashboardSkeleton />
+          <DashboardSkeleton />
         </DashboardLayout>
       </PageWrapper>
     )
@@ -210,7 +210,7 @@ export default function Dashboard() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{dashboardData?.stats?.hotLeads || 0}</div>
-                <p className="text-xs text-muted-foreground">This month</p>
+                <p className="text-xs text-muted-foreground">Till so far</p>
               </CardContent>
             </Card>
 
@@ -221,13 +221,13 @@ export default function Dashboard() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{dashboardData?.stats?.totalLeadsThisMonth || 0}</div>
-                <p className="text-xs text-muted-foreground">Across all lead sources </p>
+                <p className="text-xs text-muted-foreground">This month</p>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Site Visits Scheduled</CardTitle>
+                <CardTitle className="text-sm font-medium">Site Visits Booked</CardTitle>
                 <MapPin className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
@@ -238,12 +238,12 @@ export default function Dashboard() {
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Site Visits</CardTitle>
+                <CardTitle className="text-sm font-medium">Site Visits Booked</CardTitle>
                 <BarChart3 className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{dashboardData?.stats?.totalSiteVisits || 0}</div>
-                <p className="text-xs text-muted-foreground">Booked by leads so far</p>
+                <p className="text-xs text-muted-foreground">Till so far</p>
               </CardContent>
             </Card>
           </div>
