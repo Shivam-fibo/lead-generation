@@ -17,6 +17,7 @@ import {
   Bot,
   MapPin,
   UsersRound,
+  ChartPie,
   Crosshair,
   Goal
 } from "lucide-react"
@@ -117,6 +118,12 @@ const data = {
       title: "Site Visits",
       url: "/site-visits",
       icon: MapPin,
+      items: [],
+    },
+    {
+      title: "Usage",
+      url: "/usage",
+      icon: ChartPie,
       items: [],
     },
   ],

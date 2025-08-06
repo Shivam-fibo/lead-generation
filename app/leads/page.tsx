@@ -337,8 +337,11 @@ export default function LeadManagement() {
   const [leadTypeFilter, setLeadTypeFilter] = useState<'all' | 'Hot' | 'Cold'>('all')
   const [reachedFilter, setReachedFilter] = useState<'all' | 'reached' | 'not-reached'>('all');
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
+
   const [searchQuery, setSearchQuery] = useState<string>('')
   const [activeSearchQuery, setActiveSearchQuery] = useState('')
+
+    
   const { send: sendWebSocketMessage } = useWebSocket('new_lead', (newLead: any) => {
     console.log('New lead received via WebSocket:', newLead)
     handleNewLeadReceived(newLead)
@@ -740,12 +743,14 @@ export default function LeadManagement() {
     return (
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
+
           <Button variant="outline" className="w-full justify-start gap-2">
             <ArrowUpAZ className="flex-shrink-0" />
             <span className="truncate">{displayValue}</span>
           </Button>
         </PopoverTrigger>
         <PopoverContent className="p-2">
+
           <div className="space-y-4">
             <div>
               <h4 className="text-sm font-medium mb-2 px-2">Lead Type</h4>
@@ -902,6 +907,7 @@ export default function LeadManagement() {
     setActiveSearchQuery(trimmed);
   };
 
+
   return (
     <DashboardLayout>
       {isLeadLoading ? (
@@ -914,6 +920,7 @@ export default function LeadManagement() {
                 <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Lead Management</h1>
                 <p className="text-gray-600 dark:text-gray-400">Manage and track all your leads</p>
               </div>
+
             </div>
             <div className="flex items-center justify-between  gap-4">
               <SearchBar
@@ -939,6 +946,7 @@ export default function LeadManagement() {
                 <Button variant="outline" onClick={handleExportCSV} className="w-36 justify-start">
                   <Upload className="mr-2 h-4 w-4 flex-shrink-0" />
                   <span className="truncate">Export</span>
+
                 </Button>
                 <Button onClick={() => setShowAddDialog(true)} className="w-36 justify-start">
                   <Plus className="mr-2 h-4 w-4 flex-shrink-0" />

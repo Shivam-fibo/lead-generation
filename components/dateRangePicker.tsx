@@ -19,9 +19,11 @@ const DateRangePicker: FC<DateRangePickerProps> = ({ dateRange, setDateRange }) 
           <Button
             id="date"
             variant="outline"
+
             className="w-full justify-start text-left font-normal truncate pr-2"
           >
             <CalendarIcon className="mr-2 h-4 w-4 flex-shrink-0" />
+
             {dateRange?.from ? (
               dateRange.to ? (
                 <>
@@ -32,7 +34,9 @@ const DateRangePicker: FC<DateRangePickerProps> = ({ dateRange, setDateRange }) 
                 format(dateRange.from, "MMM dd, yyyy")
               )
             ) : (
+
               <span>Pick date</span>
+
             )}
           </Button>
         </PopoverTrigger>
