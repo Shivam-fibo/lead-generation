@@ -351,64 +351,64 @@ export default function LeadManagement() {
   })
 
 
-  const handleLeadAudioUpdate = (audioUpdate: any) => {
-    console.log('Handling lead audio update:', audioUpdate);
+const handleLeadAudioUpdate = (audioUpdate: any) => {
+  console.log('Handling lead audio update:', audioUpdate);
 
-    // Extract audio data - handle both direct data and nested payload
-    const updateData = audioUpdate.data || audioUpdate.payload || audioUpdate;
-    const { lead_id, audio_data, timestamp } = updateData;
+  // Extract audio data - handle both direct data and nested payload
+  const updateData = audioUpdate.data || audioUpdate.payload || audioUpdate;
+  const { lead_id, audio_data, timestamp } = updateData;
 
-    if (!lead_id || !audio_data) {
-      console.warn('Invalid audio update data:', audioUpdate);
-      return;
+  if (!lead_id || !audio_data) {
+    console.warn('Invalid audio update data:', audioUpdate);
+    return;
+  }
+
+  console.log('Processing audio update for lead:', lead_id);
+
+  // Update the leads list in cache
+  queryClient.setQueryData(['getAllLeads'], (oldData: any) => {
+    if (!oldData?.data) {
+      console.warn('No existing lead data to update with audio');
+      return oldData;
     }
 
-    console.log('Processing audio update for lead:', lead_id);
+    const updatedData = {
+      ...oldData,
+      data: oldData.data.map((lead: any) => {
+        if (lead._id === lead_id || lead.id === lead_id) {
+          console.log('Updating lead with audio data:', lead_id);
+          return {
+            ...lead,
+            call_recording: {
+              ...lead.call_recording,
+              audio_r2_url: audio_data.audio_r2_url,
+              elevenlabs_conversation_id: audio_data.elevenlabs_conversation_id || lead.call_recording?.elevenlabs_conversation_id
+            },
+            audio_data: audio_data
+          };
+        }
+        return lead;
+      })
+    };
 
-    // Update the leads list in cache
-    queryClient.setQueryData(['getAllLeads'], (oldData: any) => {
-      if (!oldData?.data) {
-        console.warn('No existing lead data to update with audio');
-        return oldData;
-      }
+    console.log('Updated leads with audio data for lead:', lead_id);
+    return updatedData;
+  });
 
-      const updatedData = {
-        ...oldData,
-        data: oldData.data.map((lead: any) => {
-          if (lead._id === lead_id || lead.id === lead_id) {
-            console.log('Updating lead with audio data:', lead_id);
-            return {
-              ...lead,
-              call_recording: {
-                ...lead.call_recording,
-                audio_r2_url: audio_data.audio_r2_url,
-                elevenlabs_conversation_id: audio_data.elevenlabs_conversation_id || lead.call_recording?.elevenlabs_conversation_id
-              },
-              audio_data: audio_data
-            };
-          }
-          return lead;
-        })
-      };
-
-      console.log('Updated leads with audio data for lead:', lead_id);
-      return updatedData;
-    });
-
-    // Update selected lead if it's the one being updated
-    if (selectedLead && (selectedLead._id === lead_id || selectedLead.id === lead_id)) {
-      console.log('Updating selected lead with audio data');
-      setSelectedLead(prevLead => ({
-        ...prevLead,
-        call_recording: {
-          ...prevLead.call_recording,
-          audio_r2_url: audio_data.audio_r2_url,
-          elevenlabs_conversation_id: audio_data.elevenlabs_conversation_id || prevLead.call_recording?.elevenlabs_conversation_id,
-        },
-        audio_data: audio_data
-      }));
-    }
-  };
+  // Update selected lead if it's the one being updated
+  if (selectedLead && (selectedLead._id === lead_id || selectedLead.id === lead_id)) {
+    console.log('Updating selected lead with audio data');
+    setSelectedLead(prevLead => ({
+      ...prevLead,
+      call_recording: {
+        ...prevLead.call_recording,
+        audio_r2_url: audio_data.audio_r2_url,
+        elevenlabs_conversation_id: audio_data.elevenlabs_conversation_id || prevLead.call_recording?.elevenlabs_conversation_id,
+      },
+      audio_data: audio_data
+    }));
+  }
+};
 
   const handleNewLeadReceived = (newLead: any) => {
     console.log('Handling new lead:', newLead);
