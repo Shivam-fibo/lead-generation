@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { AlertCircle, Bot, CheckCircle, ChevronDown, ChevronUp, Flame, HelpCircle, Locate, LocateOff, LucideSnowflake, Pen, PhoneOff, Plus, Upload, User, Volume2, XCircle } from "lucide-react"
+import { AlertCircle, Bot, CheckCircle, ChevronDown, ChevronUp, Flame, HelpCircle, Locate, LocateOff, LucideSnowflake, Pen, PhoneOff, Plus, Upload, User, Volume2, XCircle, ArrowUpAZ } from "lucide-react"
 import { useAuthStore } from "@/stores/auth-store"
 import { useLeadList, useLeads } from "@/hooks/use-leads"
 import LeadForm, { Lead } from "@/components/lead-form"
@@ -337,8 +337,8 @@ export default function LeadManagement() {
   const [leadTypeFilter, setLeadTypeFilter] = useState<'all' | 'Hot' | 'Cold'>('all')
   const [reachedFilter, setReachedFilter] = useState<'all' | 'reached' | 'not-reached'>('all');
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
-
-
+  const [searchQuery, setSearchQuery] = useState<string>('')
+  const [activeSearchQuery, setActiveSearchQuery] = useState('')
   const { send: sendWebSocketMessage } = useWebSocket('new_lead', (newLead: any) => {
     console.log('New lead received via WebSocket:', newLead)
     handleNewLeadReceived(newLead)
@@ -351,64 +351,64 @@ export default function LeadManagement() {
   })
 
 
-const handleLeadAudioUpdate = (audioUpdate: any) => {
-  console.log('Handling lead audio update:', audioUpdate);
+  const handleLeadAudioUpdate = (audioUpdate: any) => {
+    console.log('Handling lead audio update:', audioUpdate);
 
-  // Extract audio data - handle both direct data and nested payload
-  const updateData = audioUpdate.data || audioUpdate.payload || audioUpdate;
-  const { lead_id, audio_data, timestamp } = updateData;
+    // Extract audio data - handle both direct data and nested payload
+    const updateData = audioUpdate.data || audioUpdate.payload || audioUpdate;
+    const { lead_id, audio_data, timestamp } = updateData;
 
-  if (!lead_id || !audio_data) {
-    console.warn('Invalid audio update data:', audioUpdate);
-    return;
-  }
-
-  console.log('Processing audio update for lead:', lead_id);
-
-  // Update the leads list in cache
-  queryClient.setQueryData(['getAllLeads'], (oldData: any) => {
-    if (!oldData?.data) {
-      console.warn('No existing lead data to update with audio');
-      return oldData;
+    if (!lead_id || !audio_data) {
+      console.warn('Invalid audio update data:', audioUpdate);
+      return;
     }
 
-    const updatedData = {
-      ...oldData,
-      data: oldData.data.map((lead: any) => {
-        if (lead._id === lead_id || lead.id === lead_id) {
-          console.log('Updating lead with audio data:', lead_id);
-          return {
-            ...lead,
-            call_recording: {
-              ...lead.call_recording,
-              audio_r2_url: audio_data.audio_r2_url,
-              elevenlabs_conversation_id: audio_data.elevenlabs_conversation_id || lead.call_recording?.elevenlabs_conversation_id
-            },
-            audio_data: audio_data
-          };
-        }
-        return lead;
-      })
-    };
+    console.log('Processing audio update for lead:', lead_id);
 
-    console.log('Updated leads with audio data for lead:', lead_id);
-    return updatedData;
-  });
+    // Update the leads list in cache
+    queryClient.setQueryData(['getAllLeads'], (oldData: any) => {
+      if (!oldData?.data) {
+        console.warn('No existing lead data to update with audio');
+        return oldData;
+      }
 
-  // Update selected lead if it's the one being updated
-  if (selectedLead && (selectedLead._id === lead_id || selectedLead.id === lead_id)) {
-    console.log('Updating selected lead with audio data');
-    setSelectedLead(prevLead => ({
-      ...prevLead,
-      call_recording: {
-        ...prevLead.call_recording,
-        audio_r2_url: audio_data.audio_r2_url,
-        elevenlabs_conversation_id: audio_data.elevenlabs_conversation_id || prevLead.call_recording?.elevenlabs_conversation_id,
-      },
-      audio_data: audio_data
-    }));
-  }
-};
+      const updatedData = {
+        ...oldData,
+        data: oldData.data.map((lead: any) => {
+          if (lead._id === lead_id || lead.id === lead_id) {
+            console.log('Updating lead with audio data:', lead_id);
+            return {
+              ...lead,
+              call_recording: {
+                ...lead.call_recording,
+                audio_r2_url: audio_data.audio_r2_url,
+                elevenlabs_conversation_id: audio_data.elevenlabs_conversation_id || lead.call_recording?.elevenlabs_conversation_id
+              },
+              audio_data: audio_data
+            };
+          }
+          return lead;
+        })
+      };
+
+      console.log('Updated leads with audio data for lead:', lead_id);
+      return updatedData;
+    });
+
+    // Update selected lead if it's the one being updated
+    if (selectedLead && (selectedLead._id === lead_id || selectedLead.id === lead_id)) {
+      console.log('Updating selected lead with audio data');
+      setSelectedLead(prevLead => ({
+        ...prevLead,
+        call_recording: {
+          ...prevLead.call_recording,
+          audio_r2_url: audio_data.audio_r2_url,
+          elevenlabs_conversation_id: audio_data.elevenlabs_conversation_id || prevLead.call_recording?.elevenlabs_conversation_id,
+        },
+        audio_data: audio_data
+      }));
+    }
+  };
 
   const handleNewLeadReceived = (newLead: any) => {
     console.log('Handling new lead:', newLead);
@@ -740,11 +740,12 @@ const handleLeadAudioUpdate = (audioUpdate: any) => {
     return (
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
-          <Button variant="outline" className="w-[160px] justify-start">
-            {displayValue}
+          <Button variant="outline" className="w-full justify-start gap-2">
+            <ArrowUpAZ className="flex-shrink-0" />
+            <span className="truncate">{displayValue}</span>
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-[250px] p-2">
+        <PopoverContent className="p-2">
           <div className="space-y-4">
             <div>
               <h4 className="text-sm font-medium mb-2 px-2">Lead Type</h4>
@@ -796,33 +797,110 @@ const handleLeadAudioUpdate = (audioUpdate: any) => {
   };
 
 
-const filteredLeads = useMemo(() => {
-  if (!leads) return [];
+  const filteredLeads = useMemo(() => {
+    if (!leads) return [];
 
-  return leads.filter(lead => {
-    const typeMatch = 
-      leadTypeFilter === 'all' || 
-      lead.lead_type === leadTypeFilter;
+    return leads.filter(lead => {
+      const typeMatch =
+        leadTypeFilter === 'all' ||
+        lead.lead_type === leadTypeFilter;
 
-    const reachedMatch = 
-      reachedFilter === 'all' ||
-      (reachedFilter === 'reached' && lead.reached) ||
-      (reachedFilter === 'not-reached' && !lead.reached);
+      const reachedMatch =
+        reachedFilter === 'all' ||
+        (reachedFilter === 'reached' && lead.reached) ||
+        (reachedFilter === 'not-reached' && !lead.reached);
 
-    let dateMatch = true;
-    if (dateRange?.from && dateRange?.to) {
-      const leadDate = new Date(lead.created_at);
-      const fromDate = new Date(dateRange.from);
-      const toDate = new Date(dateRange.to);
+      let dateMatch = true;
+      if (dateRange?.from && dateRange?.to) {
+        const leadDate = new Date(lead.created_at);
+        const fromDate = new Date(dateRange.from);
+        const toDate = new Date(dateRange.to);
         toDate.setHours(23, 59, 59, 999);
 
-      dateMatch = leadDate >= fromDate && leadDate <= toDate;
-      console.log("dateMatch",dateMatch)
-    }
+        dateMatch = leadDate >= fromDate && leadDate <= toDate;
+        console.log("dateMatch", dateMatch)
+      }
+      let searchMatch = true;
+      if (activeSearchQuery) {
+        const query = activeSearchQuery.toLowerCase();
+        const fullName = `${lead.first_name || ''} ${lead.last_name || ''}`.toLowerCase();
+        const contactNumber = (lead.contact_number || '').toString();
 
-    return typeMatch && reachedMatch && dateMatch;
-  });
-}, [leads, leadTypeFilter, reachedFilter, dateRange]);
+        searchMatch = fullName.includes(query) || contactNumber.includes(query);
+      }
+
+      return typeMatch && reachedMatch && dateMatch && searchMatch;
+    });
+  }, [leads, leadTypeFilter, reachedFilter, dateRange, activeSearchQuery]);
+
+  interface SearchBarProps {
+    searchQuery: string;
+    setSearchQuery: (query: string) => void;
+    onSearch: (localQuery: string) => void;
+  }
+
+  const SearchBar: React.FC<SearchBarProps> = ({
+    searchQuery,
+    setSearchQuery,
+    onSearch
+  }) => {
+    const [localQuery, setLocalQuery] = useState(searchQuery);
+    useEffect(() => {
+      setLocalQuery(searchQuery);
+    }, [searchQuery]);
+
+    const handleKeyPress = (e: React.KeyboardEvent) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        setSearchQuery(localQuery);
+        onSearch(localQuery);
+      }
+    };
+
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const value = e.target.value;
+      console.log("value is", value)
+      setLocalQuery(value);
+
+
+      if (value.trim() === '') {
+        setSearchQuery('');
+        onSearch('');
+      }
+    };
+
+
+    return (
+      <div className="flex gap-2">
+        <input
+          type="text"
+          placeholder="Search by name or phone number..."
+          value={localQuery}
+          onChange={handleInputChange}
+          onKeyDown={handleKeyPress}
+          className="pl-4 pr-10 py-2 border  rounded-lg w-[360px]"
+        />
+        <div
+          onClick={() => {
+            setSearchQuery(localQuery);
+            onSearch(localQuery);
+          }}
+          className=" bg-transparent cursor-pointer"
+
+        >
+          <Button>Search</Button>
+          {/* <Search className="h-6 w-6 text-gray-400" /> */}
+
+        </div>
+      </div>
+    );
+  };
+
+  const handleSearch = (query?: string) => {
+    const value = query !== undefined ? query : searchQuery;
+    const trimmed = value.trim();
+    setActiveSearchQuery(trimmed);
+  };
 
   return (
     <DashboardLayout>
@@ -836,29 +914,35 @@ const filteredLeads = useMemo(() => {
                 <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Lead Management</h1>
                 <p className="text-gray-600 dark:text-gray-400">Manage and track all your leads</p>
               </div>
-              <div className="flex space-x-2">
-                {/* <Button variant="outline" onClick={() => document.getElementById("csv-upload")?.click()}> */}
+            </div>
+            <div className="flex items-center justify-between  gap-4">
+              <SearchBar
+                searchQuery={searchQuery}
+                setSearchQuery={setSearchQuery}
+                onSearch={handleSearch}
+              />
 
-                <MultiSelectFilter
-                  leadTypeFilter={leadTypeFilter}
-                  reachedFilter={reachedFilter}
-                  setLeadTypeFilter={setLeadTypeFilter}
-                  setReachedFilter={setReachedFilter}
-                />
+              {/* <Button variant="outline" onClick={() => document.getElementById("csv-upload")?.click()}> */}
 
-                <div>
-                 <DateRangePicker dateRange={dateRange} setDateRange={setDateRange} />
+              <div className="flex gap-2">
+                <div className="w-36">
+                  <MultiSelectFilter
+                    leadTypeFilter={leadTypeFilter}
+                    reachedFilter={reachedFilter}
+                    setLeadTypeFilter={setLeadTypeFilter}
+                    setReachedFilter={setReachedFilter}
+                  />
                 </div>
-
-
-
-                <Button variant="outline" onClick={handleExportCSV}>
-                  <Upload className="mr-2 h-4 w-4" />
-                  Export CSV
+                <div className="w-36">
+                  <DateRangePicker dateRange={dateRange} setDateRange={setDateRange} />
+                </div>
+                <Button variant="outline" onClick={handleExportCSV} className="w-36 justify-start">
+                  <Upload className="mr-2 h-4 w-4 flex-shrink-0" />
+                  <span className="truncate">Export</span>
                 </Button>
-                <Button onClick={() => setShowAddDialog(true)}>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add Lead
+                <Button onClick={() => setShowAddDialog(true)} className="w-36 justify-start">
+                  <Plus className="mr-2 h-4 w-4 flex-shrink-0" />
+                  <span className="truncate">Add Lead</span>
                 </Button>
               </div>
             </div>
