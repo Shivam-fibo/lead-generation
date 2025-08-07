@@ -30,6 +30,7 @@ import {
 import { DateRange } from "react-day-picker";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import DateRangePicker from "@/components/dateRangePicker"
+import { FaLongArrowAltDown } from "react-icons/fa";
 
 
 
@@ -336,6 +337,8 @@ export default function LeadManagement() {
 
   const [leadTypeFilter, setLeadTypeFilter] = useState<'all' | 'Hot' | 'Cold'>('all')
   const [reachedFilter, setReachedFilter] = useState<'all' | 'reached' | 'not-reached'>('all');
+  const [callPriorityFilter, setCallPriorityFilter] = useState<'all' | 'low' | 'callnow'>('all');
+
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
   const [searchQuery, setSearchQuery] = useState<string>('')
   const [activeSearchQuery, setActiveSearchQuery] = useState('')
@@ -548,7 +551,6 @@ export default function LeadManagement() {
   const showExpandButton = parsedConversations.length > 3;
 
 
-  console.log('selectedLead', selectedLead)
 
   // Utility: CSV export function with UTF-8 BOM for Excel Unicode support
   const exportToCSV = (data, filename = 'leads_export.csv') => {
@@ -687,8 +689,10 @@ export default function LeadManagement() {
   interface MultiSelectFilterProps {
     leadTypeFilter: 'all' | 'Hot' | 'Cold';
     reachedFilter: 'all' | 'reached' | 'not-reached';
+    callPriorityFilter: 'all' | 'low' | 'callnow';
     setLeadTypeFilter: (value: 'all' | 'Hot' | 'Cold') => void;
     setReachedFilter: (value: 'all' | 'reached' | 'not-reached') => void;
+    setCallPriorityFilter: (value: 'all' | 'low' | 'callnow') => void;
   }
 
   const MultiSelectFilter: React.FC<MultiSelectFilterProps> = ({
@@ -696,11 +700,13 @@ export default function LeadManagement() {
     reachedFilter,
     setLeadTypeFilter,
     setReachedFilter,
+    callPriorityFilter,
+    setCallPriorityFilter
   }) => {
     const [open, setOpen] = useState(false);
     const [selectedTypes, setSelectedTypes] = useState<('Hot' | 'Cold')[]>([]);
     const [selectedStatuses, setSelectedStatuses] = useState<('reached' | 'not-reached')[]>([]);
-
+    const [selectedPriorities, setSelectedPriorities] = useState<('low' | 'callnow')[]>([]);
     useEffect(() => {
       if (leadTypeFilter === 'Hot') setSelectedTypes(['Hot']);
       else if (leadTypeFilter === 'Cold') setSelectedTypes(['Cold']);
@@ -709,7 +715,11 @@ export default function LeadManagement() {
       if (reachedFilter === 'reached') setSelectedStatuses(['reached']);
       else if (reachedFilter === 'not-reached') setSelectedStatuses(['not-reached']);
       else setSelectedStatuses([]);
-    }, [leadTypeFilter, reachedFilter]);
+
+       if (callPriorityFilter === 'low') setSelectedPriorities(['low']);
+    else if (callPriorityFilter === 'callnow') setSelectedPriorities(['callnow']);
+    else setSelectedPriorities([]);
+    }, [leadTypeFilter, reachedFilter, callPriorityFilter]);
 
     const handleTypeChange = (type: 'Hot' | 'Cold') => {
       if (leadTypeFilter === type) {
@@ -727,6 +737,14 @@ export default function LeadManagement() {
       }
     };
 
+      const handlePriorityChange = (priority: 'low' | 'callnow') => {
+    if (callPriorityFilter === priority) {
+      setCallPriorityFilter('all');
+    } else {
+      setCallPriorityFilter(priority);
+    }
+  };
+
 
     const displayValue = React.useMemo(() => {
       const parts = [];
@@ -734,8 +752,11 @@ export default function LeadManagement() {
       if (selectedStatuses.length > 0) parts.push(
         ...selectedStatuses.map(s => s === 'reached' ? 'Reached' : 'Not Reached')
       );
+       if (selectedPriorities.length > 0) parts.push(  
+      ...selectedPriorities.map(p => p === 'callnow' ? 'Call Now' : 'Low')
+    );
       return parts.length > 0 ? parts.join(', ') : 'Filters';
-    }, [selectedTypes, selectedStatuses]);
+    }, [selectedTypes, selectedStatuses, selectedPriorities]);
 
     return (
       <Popover open={open} onOpenChange={setOpen}>
@@ -790,6 +811,25 @@ export default function LeadManagement() {
                 </div>
               </div>
             </div>
+             <div>
+            <h4 className="text-sm font-medium mb-2 px-2">Call Priority</h4>
+            <div className="space-y-1">
+              <div
+                className={`flex items-center p-2 rounded-md cursor-pointer ${selectedPriorities.includes('callnow') ? 'bg-accent' : 'hover:bg-muted'}`}
+                onClick={() => handlePriorityChange('callnow')}
+              >
+                <span className="text-yellow-500 mr-2">📞</span>
+                <span>Call Now</span>
+              </div>
+              <div
+                className={`flex items-center p-2 rounded-md cursor-pointer ${selectedPriorities.includes('low') ? 'bg-accent' : 'hover:bg-muted'}`}
+                onClick={() => handlePriorityChange('low')}
+              >
+                <FaLongArrowAltDown height={"10px"} width={"10px"} color="#1e40af" className="mr-2" />
+                <span>Low Priority</span>
+              </div>
+            </div>
+          </div>
           </div>
         </PopoverContent>
       </Popover>
@@ -810,6 +850,11 @@ export default function LeadManagement() {
         (reachedFilter === 'reached' && lead.reached) ||
         (reachedFilter === 'not-reached' && !lead.reached);
 
+       const priorityMatch =
+      callPriorityFilter === 'all' ||
+      (callPriorityFilter === 'callnow' && lead.call_immediately === true) ||
+      (callPriorityFilter === 'low' && lead.call_immediately === false);
+
       let dateMatch = true;
       if (dateRange?.from && dateRange?.to) {
         const leadDate = new Date(lead.created_at);
@@ -829,9 +874,9 @@ export default function LeadManagement() {
         searchMatch = fullName.includes(query) || contactNumber.includes(query);
       }
 
-      return typeMatch && reachedMatch && dateMatch && searchMatch;
+      return typeMatch && reachedMatch && priorityMatch && dateMatch && searchMatch;
     });
-  }, [leads, leadTypeFilter, reachedFilter, dateRange, activeSearchQuery]);
+  }, [leads, leadTypeFilter, reachedFilter, dateRange, activeSearchQuery, callPriorityFilter]);
 
   interface SearchBarProps {
     searchQuery: string;
@@ -905,8 +950,8 @@ export default function LeadManagement() {
   return (
     <DashboardLayout>
       {isLeadLoading ? (
-        <LeadSkeleton />
-      ) : (
+          <LeadSkeleton />
+        ) : (
         <>
           <div className="space-y-6">
             <div className="flex justify-between items-center">
@@ -931,6 +976,9 @@ export default function LeadManagement() {
                     reachedFilter={reachedFilter}
                     setLeadTypeFilter={setLeadTypeFilter}
                     setReachedFilter={setReachedFilter}
+                    callPriorityFilter={callPriorityFilter}
+                    setCallPriorityFilter={setCallPriorityFilter}
+
                   />
                 </div>
                 <div className="w-36">

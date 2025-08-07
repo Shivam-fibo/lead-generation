@@ -279,26 +279,202 @@ export default function SiteVisitManagement() {
 
 
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
+  const [searchQuery, setSearchQuery] = useState<string>('')
+  const [activeSearchQuery, setActiveSearchQuery] = useState('')
 
   const filteredSiteVisits = useMemo(() => {
     if (!siteVisitsData) return [];
 
     return siteVisitsData.filter(visit => {
 
-    let dateMatch = true;
-    if (dateRange?.from && dateRange?.to) {
-      const leadDate = new Date(visit.created_at);
-      const fromDate = new Date(dateRange.from);
-      const toDate = new Date(dateRange.to);
+      let dateMatch = true;
+      if (dateRange?.from && dateRange?.to) {
+        const leadDate = new Date(visit.created_at);
+        const fromDate = new Date(dateRange.from);
+        const toDate = new Date(dateRange.to);
         toDate.setHours(23, 59, 59, 999);
 
-      dateMatch = leadDate >= fromDate && leadDate <= toDate;
-      console.log("dateMatch",dateMatch)
-    }
-    return dateMatch
-  });
+        dateMatch = leadDate >= fromDate && leadDate <= toDate;
+        console.log("dateMatch", dateMatch)
+      }
 
-  }, [siteVisitsData, dateRange]); 
+      let searchMatch = true;
+      if (activeSearchQuery) {
+        const query = activeSearchQuery.toLowerCase();
+        const fullName = `${visit.first_name || ''} ${visit.last_name || ''}`.toLowerCase();
+        const contactNumber = (visit.contact_number || '').toString();
+
+        searchMatch = fullName.includes(query) || contactNumber.includes(query);
+      }
+      return dateMatch && searchMatch
+    });
+
+  }, [siteVisitsData, dateRange, activeSearchQuery]);
+
+  interface SearchBarProps {
+    searchQuery: string;
+    setSearchQuery: (query: string) => void;
+    onSearch: (localQuery: string) => void;
+  }
+
+  const SearchBar: React.FC<SearchBarProps> = ({
+    searchQuery,
+    setSearchQuery,
+    onSearch
+  }) => {
+    const [localQuery, setLocalQuery] = useState(searchQuery);
+    useEffect(() => {
+      setLocalQuery(searchQuery);
+    }, [searchQuery]);
+
+    const handleKeyPress = (e: React.KeyboardEvent) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        setSearchQuery(localQuery);
+        onSearch(localQuery);
+      }
+    };
+
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const value = e.target.value;
+      console.log("value is", value)
+      setLocalQuery(value);
+
+
+      if (value.trim() === '') {
+        setSearchQuery('');
+        onSearch('');
+      }
+    };
+
+
+    return (
+      <div className="flex gap-2">
+        <input
+          type="text"
+          placeholder="Search by name or phone number..."
+          value={localQuery}
+          onChange={handleInputChange}
+          onKeyDown={handleKeyPress}
+          className="pl-4 pr-10 py-2 border  rounded-lg w-[360px]"
+        />
+        <div
+          onClick={() => {
+            setSearchQuery(localQuery);
+            onSearch(localQuery);
+          }}
+          className=" bg-transparent cursor-pointer"
+
+        >
+          <Button>Search</Button>
+          {/* <Search className="h-6 w-6 text-gray-400" /> */}
+
+        </div>
+      </div>
+    );
+  };
+
+  const handleSearch = (query?: string) => {
+    const value = query !== undefined ? query : searchQuery;
+    const trimmed = value.trim();
+    setActiveSearchQuery(trimmed);
+  };
+
+  const exportSiteVisitsToCSV = (data, filename = 'site_visits_export.csv') => {
+    const headers = [
+      'First Name',
+      'Last Name',
+      'Contact Number',
+      'Lead Type',
+      'Requirement',
+      'Project Name',
+      'Call Status',
+      'Visit Booking Date',
+      'Call Summary',
+      'Reached',
+      'Created At',
+      'Updated At'
+    ];
+
+    const csvData = data.map(visit => [
+      visit.first_name || '',
+      visit.last_name || '',
+      visit.contact_number || '',
+      visit.lead_type || '',
+      visit.requirement || '',
+      visit.project_name || '',
+      visit.call_connection_status || '',
+      visit.visit_booking_datetime ? new Date(visit.visit_booking_datetime).toLocaleString('en-IN', {
+        timeZone: 'Asia/Kolkata',
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true,
+      }) : '',
+      visit.call_summary || '',
+      visit.reached ? 'Yes' : 'No',
+      visit.created_at ? new Date(visit.created_at).toLocaleString('en-IN', {
+        timeZone: 'Asia/Kolkata',
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true,
+      }) : '',
+      visit.updated_at ? new Date(visit.updated_at).toLocaleString('en-IN', {
+        timeZone: 'Asia/Kolkata',
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true,
+      }) : ''
+    ]);
+
+    const csvContent = [headers, ...csvData];
+
+    const csvString = csvContent.map(row =>
+      row.map(field => {
+        if (typeof field === 'string' && (field.includes(',') || field.includes('"') || field.includes('\n'))) {
+          return `"${field.replace(/"/g, '""')}"`;
+        }
+        return field;
+      }).join(',')
+    ).join('\n');
+
+    // Add UTF-8 BOM for Excel compatibility
+    const BOM = '\uFEFF';
+    const blob = new Blob([BOM + csvString], { type: 'text/csv;charset=utf-8;' });
+
+    const link = document.createElement('a');
+    if (link.download !== undefined) {
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', filename);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  };
+
+  // Example usage
+  const handleSiteVisitsExportCSV = () => {
+    if (!siteVisitsData || siteVisitsData.length === 0) {
+      alert('No site visits data to export');
+      return;
+    }
+
+    const timestamp = new Date().toISOString().split('T')[0];
+    const filename = `site_visits_export_${timestamp}.csv`;
+
+    exportSiteVisitsToCSV(siteVisitsData, filename);
+  };
+
 
 
 
@@ -383,18 +559,34 @@ export default function SiteVisitManagement() {
                 <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Site Visits</h1>
                 <p className="text-gray-600 dark:text-gray-400">Manage all scheduled site visits and meetings</p>
               </div>
-              <div className="flex space-x-2">
-                <div>
-                  <DateRangePicker dateRange={dateRange} setDateRange={setDateRange} />
-                </div>
-                {/* <Button variant="outline" onClick={() => document.getElementById("csv-upload")?.click()}>
+
+              {/* <Button variant="outline" onClick={() => document.getElementById("csv-upload")?.click()}>
                   <Upload className="mr-2 h-4 w-4" />
                   Export CSV
                 </Button> */}
-                {/* <Button onClick={() => setShowAddDialog(true)}>
+              {/* <Button onClick={() => setShowAddDialog(true)}>
                   <Plus className="mr-2 h-4 w-4" />
                   Add Site Visit
                 </Button> */}
+
+            </div>
+            <div className="flex justify-between">
+              <SearchBar
+                searchQuery={searchQuery}
+                setSearchQuery={setSearchQuery}
+                onSearch={handleSearch}
+              />
+              <div className="flex space-x-2">
+
+                <div className="w-36">
+                  <DateRangePicker dateRange={dateRange} setDateRange={setDateRange} />
+                </div>
+                <div>
+                  <Button variant="outline" onClick={handleSiteVisitsExportCSV} className="w-36 justify-start">
+                    <Upload className="mr-2 h-4 w-4 flex-shrink-0" />
+                    <span className="truncate">Export</span>
+                  </Button>
+                </div>
               </div>
             </div>
 
